@@ -51,9 +51,6 @@ async def handle_video_commands(update: Update, context: ContextTypes.DEFAULT_TY
 def main() -> None:
     """Start the bot."""
     application = Application.builder().token(TOKEN).build()
-
-    # Command handlers
-    application.add_handler(CommandHandler("start", start))
     
     # Handle /video1, /video2, etc. commands
     application.add_handler(MessageHandler(filters.COMMAND, handle_video_commands))
