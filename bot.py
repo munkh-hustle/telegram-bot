@@ -1,14 +1,8 @@
 from telegram import Update
-from telegram.ext import (
-    Application,
-    CommandHandler,
-    ContextTypes,
-    MessageHandler,
-    filters
-)
+from telegram.ext import Application, CommandHandler, ContextTypes
 import logging
 
-# Set up logging
+# Configure logging
 logging.basicConfig(
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
     level=logging.INFO
@@ -17,7 +11,6 @@ logger = logging.getLogger(__name__)
 
 TOKEN = "7641317425:AAHfWDG6uHQZeG8BQ5JvuvjMFvLFgrqbh9Q"
 
-# Dictionary with video file_ids
 VIDEOS = {
     "video1": "BAACAgUAAxkBAANbZ-G7Jn5y85BrBhyK-nfBOLTFjrIAArsXAAJPfhFX3fpc9xwmtt02BA",
     "video2": "BAACAgUAAxkBAANaZ-G7Gv0e-_say7Enp2R-19p9jL4AAm0aAAJ2HBFX-pw5CVY9I-w2BA",
@@ -25,7 +18,9 @@ VIDEOS = {
 }
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    """Handle /start command with optional deep link parameter."""
+    """Handle /start command with deep linking."""
+    logger.info(f"New start command from {update.effective_chat.id}")
+    
     if context.args:
         video_id = context.args[0]
         if video_id in VIDEOS:
@@ -33,61 +28,45 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
                 await context.bot.send_video(
                     chat_id=update.effective_chat.id,
                     video=VIDEOS[video_id],
-                    caption=f"Here's your requested video ({video_id})!"
+                    caption=f"Here's your {video_id}!"
                 )
-                logger.info(f"Sent video {video_id} to {update.effective_chat.id}")
+                logger.info(f"Successfully sent {video_id}")
                 return
             except Exception as e:
-                logger.error(f"Error sending video: {e}")
-                await update.message.reply_text("Failed to send video. Please try again.")
+                logger.error(f"Failed to send video: {e}")
+                await update.message.reply_text("Failed to send video. Please try /start again.")
     
     await update.message.reply_text(
-        "Hello! Use these commands to get videos:\n"
-        "/video1 - Get Video 1\n"
-        "/video2 - Get Video 2\n"
-        "/video3 - Get Video 3"
+        "Welcome! Click links on our website to get videos, or use:\n"
+        "/video1 /video2 /video3"
     )
 
-async def send_video1(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    """Handle /video1 command."""
-    await context.bot.send_video(
-        chat_id=update.effective_chat.id,
-        video=VIDEOS["video1"],
-        caption="Here's Video 1!"
-    )
-
-async def send_video2(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    """Handle /video2 command."""
-    await context.bot.send_video(
-        chat_id=update.effective_chat.id,
-        video=VIDEOS["video2"],
-        caption="Here's Video 2!"
-    )
-
-async def send_video3(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    """Handle /video3 command."""
-    await context.bot.send_video(
-        chat_id=update.effective_chat.id,
-        video=VIDEOS["video3"],
-        caption="Here's Video 3!"
-    )
-
-async def error_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    """Log errors."""
-    logger.error(f"Update {update} caused error {context.error}")
+async def send_video(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    """Handle video commands."""
+    command = update.message.text[1:]  # Remove '/'
+    if command in VIDEOS:
+        try:
+            await context.bot.send_video(
+                chat_id=update.effective_chat.id,
+                video=VIDEOS[command],
+                caption=f"Here's your {command}!"
+            )
+            logger.info(f"Sent {command} via command")
+        except Exception as e:
+            logger.error(f"Command error: {e}")
+            await update.message.reply_text(f"Failed to send {command}. Please try again.")
 
 def main() -> None:
-    """Start the bot."""
+    """Run the bot."""
     application = Application.builder().token(TOKEN).build()
     
-    # Add handlers
+    # Handlers
     application.add_handler(CommandHandler("start", start))
-    application.add_handler(CommandHandler("video1", send_video1))
-    application.add_handler(CommandHandler("video2", send_video2))
-    application.add_handler(CommandHandler("video3", send_video3))
-    application.add_error_handler(error_handler)
-
-    logger.info("Bot is running...")
+    application.add_handler(CommandHandler("video1", send_video))
+    application.add_handler(CommandHandler("video2", send_video))
+    application.add_handler(CommandHandler("video3", send_video))
+    
+    logger.info("Bot is fully operational")
     application.run_polling()
 
 if __name__ == "__main__":
