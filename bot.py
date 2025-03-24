@@ -7,7 +7,7 @@ from telegram.ext import (
     filters
 )
 
-TOKEN = "YOUR_BOT_TOKEN_HERE"
+TOKEN = "7641317425:AAHfWDG6uHQZeG8BQ5JvuvjMFvLFgrqbh9Q"
 
 # Dictionary with video file_ids
 VIDEOS = {
