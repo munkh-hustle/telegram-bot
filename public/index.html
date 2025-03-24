@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Telegram Video Sender</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+            text-align: center;
+        }
+        button {
+            background-color: #0088cc;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            font-size: 16px;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+        button:hover {
+            background-color: #006699;
+        }
+        #status {
+            margin-top: 20px;
+            min-height: 24px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Get Your Video</h1>
+    
+    <!-- Telegram Login Widget -->
+    <script async src="https://telegram.org/js/telegram-widget.js?22"
+            data-telegram-login="lgbt_kino_bot"
+            data-auth-url="https://your-railway-url.up.railway.app/auth"
+            data-request-access="write"></script>
+    
+    <!-- Video Send Button (hidden until auth) -->
+    <button id="sendBtn" style="display:none; margin-top:20px;">
+        Send Video to Telegram
+    </button>
+    
+    <div id="status"></div>
+
+    <script>
+        document.getElementById('sendBtn').addEventListener('click', async () => {
+            const statusEl = document.getElementById('status');
+            statusEl.textContent = 'Sending video...';
+            statusEl.style.color = 'blue';
+            
+            try {
+                const response = await fetch('/send-video', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ 
+                        user: Telegram.WebApp.initDataUnsafe.user 
+                    })
+                });
+                
+                const result = await response.json();
+                if (response.ok) {
+                    statusEl.textContent = '✓ Video sent successfully!';
+                    statusEl.style.color = 'green';
+                } else {
+                    statusEl.textContent = `Error: ${result.error || 'Failed to send'}`;
+                    statusEl.style.color = 'red';
+                }
+            } catch (error) {
+                statusEl.textContent = 'Network error - please try again';
+                statusEl.style.color = 'red';
+            }
+        });
+
+        // Show button when authenticated
+        if (Telegram.WebApp.initDataUnsafe?.user) {
+            document.getElementById('sendBtn').style.display = 'inline-block';
+        }
+    </script>
+</body>
+</html>
