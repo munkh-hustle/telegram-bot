@@ -44,16 +44,29 @@
     <!-- Video Send Button -->
     <button id="sendBtn" class="hidden">Send Video to Telegram</button>
     <div id="status"></div>
+    
     <script>
-        // Initialize Telegram WebApp
-        Telegram.WebApp.ready();
-        
-        // Show button only when expanded
-        if (Telegram.WebApp.isExpanded) {
-          document.getElementById('sendBtn').style.display = 'block';
-        }
-      </script>
-    <script>
+        // Debug Telegram WebApp initialization
+console.log('Telegram WebApp state:', {
+  platform: Telegram.WebApp.platform,
+  initData: Telegram.WebApp.initData,
+  initDataUnsafe: Telegram.WebApp.initDataUnsafe
+});
+
+// Manual send test function
+window.testSendVideo = async () => {
+  const response = await fetch('/webhook', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      message: {
+        chat: { id: YOUR_CHAT_ID }, // Replace with actual chat ID
+        text: '/test'
+      }
+    })
+  });
+  console.log('Test response:', await response.json());
+};
         // Initialize Telegram widget
         function initTelegramAuth() {
             const script = document.createElement('script');
