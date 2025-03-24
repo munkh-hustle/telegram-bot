@@ -44,7 +44,15 @@
     <!-- Video Send Button -->
     <button id="sendBtn" class="hidden">Send Video to Telegram</button>
     <div id="status"></div>
-
+    <script>
+        // Initialize Telegram WebApp
+        Telegram.WebApp.ready();
+        
+        // Show button only when expanded
+        if (Telegram.WebApp.isExpanded) {
+          document.getElementById('sendBtn').style.display = 'block';
+        }
+      </script>
     <script>
         // Initialize Telegram widget
         function initTelegramAuth() {
