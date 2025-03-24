@@ -1,0 +1,32 @@
+<div id="status"></div>
+
+<script>
+    document.getElementById('sendVideoBtn').addEventListener('click', async () => {
+        const statusEl = document.getElementById('status');
+        statusEl.textContent = 'Sending video...';
+        statusEl.style.color = 'blue';
+        
+        try {
+            const response = await fetch('/send-video', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: localStorage.getItem('telegram_user')
+            });
+            
+            const result = await response.json();
+            
+            if (response.ok) {
+                statusEl.textContent = '✓ Video sent to your Telegram!';
+                statusEl.style.color = 'green';
+            } else {
+                statusEl.textContent = `Error: ${result.error?.description || result.message}`;
+                statusEl.style.color = 'red';
+            }
+        } catch (error) {
+            statusEl.textContent = 'Network error - please try again';
+            statusEl.style.color = 'red';
+        }
+    });
+</script>
