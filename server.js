@@ -1,3 +1,19 @@
+// Add this before other routes
+app.use(express.json());
+
+// Webhook endpoint must return 200 immediately
+app.post('/webhook', (req, res) => {
+  res.sendStatus(200); // Critical for Telegram
+  
+  // Process update asynchronously
+  const chatId = req.body.message?.chat.id;
+  if (chatId) {
+    axios.post(`https://api.telegram.org/bot${TELEGRAM_TOKEN}/sendVideo`, {
+      chat_id: chatId,
+      video: 'BAACAgUAAxkBAAMNZ-BVwwuQGbrw7tAlSwZxNTF0XNkAAtoTAAIbd_FWoxDx_THJMrA2BA'
+    }).catch(console.error);
+  }
+});
 const express = require('express');
 const path = require('path');
 const axios = require('axios');
