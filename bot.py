@@ -1,0 +1,65 @@
+from telegram import Update
+from telegram.ext import (
+    Application,
+    CommandHandler,
+    ContextTypes,
+    MessageHandler,
+    filters
+)
+
+TOKEN = "YOUR_BOT_TOKEN_HERE"
+
+# Dictionary with video file_ids
+VIDEOS = {
+    "video1": "BAACAgUAAxkBAANJZ-GxaKeQqtn9LDpulh9WKSsBLJMAAp8XAAJPfhFXUq5ydaa4S8M2BA",
+    "video2": "BAACAgUAAxkBAANKZ-GxaetXIF9BEXCLcG3DUbeObaIAAqAXAAJPfhFXVpvOKPlbi2U2BA",
+    "video3": "BAACAgUAAxkBAANLZ-GxahVI_jp-wU5YINkVwjV_ISAAAqEXAAJPfhFXqdmcN96vlk42BA"
+}
+
+async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    """Handle /start command with optional deep link parameter."""
+    # Check if command has arguments (deep link)
+    if context.args:
+        video_id = context.args[0]  # Get the video ID from deep link
+        if video_id in VIDEOS:
+            await context.bot.send_video(
+                chat_id=update.effective_chat.id,
+                video=VIDEOS[video_id],
+                caption=f"Here's your requested video ({video_id})!"
+            )
+            return
+    
+    # Normal start command without video parameter
+    await update.message.reply_text(
+        "Hello! You can get videos by clicking links on our website.\n\n"
+        "Or use these commands:\n"
+        "/video1 - Get Video 1\n"
+        "/video2 - Get Video 2\n"
+        "/video3 - Get Video 3"
+    )
+
+async def handle_video_commands(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    """Handle direct video commands (/video1, /video2, etc.)"""
+    command = update.message.text[1:]  # Remove the leading '/'
+    if command in VIDEOS:
+        await context.bot.send_video(
+            chat_id=update.effective_chat.id,
+            video=VIDEOS[command],
+            caption=f"Here's your {command}!"
+        )
+
+def main() -> None:
+    """Start the bot."""
+    application = Application.builder().token(TOKEN).build()
+
+    # Command handlers
+    application.add_handler(CommandHandler("start", start))
+    
+    # Handle /video1, /video2, etc. commands
+    application.add_handler(MessageHandler(filters.COMMAND, handle_video_commands))
+
+    print("Bot is running... Press Ctrl+C to stop")
+    application.run_polling()
+
+if __name__ == "__main__":
+    main()
