@@ -52,7 +52,8 @@ def main() -> None:
     """Start the bot."""
     application = Application.builder().token(TOKEN).build()
     
-    # Handle /video1, /video2, etc. commands
+    # Add ALL handlers
+    application.add_handler(CommandHandler("start", start))  # THIS WAS MISSING
     application.add_handler(MessageHandler(filters.COMMAND, handle_video_commands))
 
     print("Bot is running... Press Ctrl+C to stop")
