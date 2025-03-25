@@ -28,6 +28,12 @@ def save_videos(videos: dict):
         json.dump(videos, f, indent=2)
 
 VIDEOS = load_videos()
+async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    """Send a message when the command /start is issued."""
+    await update.message.reply_text('Hello! I am your bot.')
+async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    """Send a message when the command /help is issued."""
+    await update.message.reply_text('Help message goes here!')
 
 async def rename_video(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     """Rename a video (/rename old_name new_name)"""
@@ -58,6 +64,29 @@ async def rename_video(update: Update, context: ContextTypes.DEFAULT_TYPE) -> No
     application.add_handler(CommandHandler(f"delete_{new_name}", delete_video))
     
     await update.message.reply_text(f"✅ Video renamed from '{old_name}' to '{new_name}'!")
+
+async def delete_video(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    """Delete a video from the list (/delete <video_name>)"""
+    if not context.args:
+        await update.message.reply_text("Usage: /delete <video_name>")
+        return
+    
+    video_name = context.args[0]
+    if video_name in VIDEOS:
+        del VIDEOS[video_name]
+        save_videos(VIDEOS)
+        
+        # Remove the command handler for this video
+        handlers = application.handlers
+        for handler_group in handlers.values():
+            for handler in handler_group:
+                if isinstance(handler, CommandHandler) and handler.commands == {video_name}:
+                    application.remove_handler(handler)
+        
+        await update.message.reply_text(f"✅ Video '{video_name}' deleted!")
+    else:
+        await update.message.reply_text(f"❌ Video '{video_name}' not found!")
+
 
 async def send_video(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     """Send a video when its command is used."""
