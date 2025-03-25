@@ -93,7 +93,7 @@ async def list_videos(update: Update, context: ContextTypes.DEFAULT_TYPE) -> Non
         await update.message.reply_text("No videos available.")
     else:
         message = "📁 Available videos:\n" + "\n".join(
-            f"• {name} - /delete_{name}" for name in VIDEOS.keys()
+            f"• {name} - {name}" for name in VIDEOS.keys()
         )
         await update.message.reply_text(message)
 
