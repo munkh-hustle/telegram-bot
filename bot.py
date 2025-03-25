@@ -121,11 +121,25 @@ async def add_video(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await update.message.reply_text("Reply to a video with /addvideo <name>")
         return
     
+    # Get video name from command arguments or generate default
     video_name = " ".join(context.args) if context.args else f"video{len(video_manager.videos)+1}"
     video_id = update.message.reply_to_message.video.file_id
     
+    # Add video to manager
     video_manager.add_video(video_name, video_id)
-    application.add_handler(CommandHandler(video_name, lambda u, c: send_video(u, c, video_name)))
+    
+    # Create a proper handler with captured video_name
+    async def video_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
+        await send_video(update, context, video_name)
+    
+    # Remove existing handler if any
+    for handler in application.handlers[0]:
+        if isinstance(handler, CommandHandler) and handler.commands == {video_name}:
+            application.remove_handler(handler)
+            break
+    
+    # Add new handler
+    application.add_handler(CommandHandler(video_name, video_handler))
     
     await update.message.reply_text(f"✅ Added '{video_name}'!")
 
@@ -168,11 +182,18 @@ async def cleanup_videos(update: Update, context: ContextTypes.DEFAULT_TYPE):
         f"Deleted {len(deleted)} unavailable videos\n"
         f"{', '.join(deleted) if deleted else 'None'}"
     )
+    
+async def handle_video_reply(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Handle when someone replies to a video without using /addvideo"""
+    if await is_admin(update):
+        await update.message.reply_text("Tip: Use /addvideo <name> to save this video")
 
 def main():
     global application
     application = Application.builder().token(TOKEN).build()
     
+    application.add_handler(MessageHandler(filters.VIDEO & filters.REPLY, handle_video_reply))
+
     # Core commands
     application.add_handler(CommandHandler("start", start))
     application.add_handler(CommandHandler("list", list_videos))
