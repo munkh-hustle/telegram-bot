@@ -68,7 +68,10 @@ class VideoManager:
 video_manager = VideoManager()
 
 async def is_admin(update: Update) -> bool:
-    return update.effective_user.id in ADMIN_IDS
+    user_id = update.effective_user.id
+    print(f"DEBUG: Checking admin status for user_id={user_id}")
+    print(f"DEBUG: ADMIN_IDS={ADMIN_IDS}")
+    return user_id in ADMIN_IDS
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if context.args:
@@ -113,10 +116,14 @@ async def list_videos(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text(message)
 
 async def add_video(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    print("DEBUG: add_video triggered!")  # Temporary debug line
     if not await is_admin(update):
+        print("DEBUG: User is not admin!")
         await update.message.reply_text("Admin only command.")
         return
     
+    print("DEBUG: User is admin!")
+
     if not update.message.reply_to_message or not update.message.reply_to_message.video:
         await update.message.reply_text("Reply to a video with /addvideo <name>")
         return
@@ -182,15 +189,21 @@ async def cleanup_videos(update: Update, context: ContextTypes.DEFAULT_TYPE):
         f"Deleted {len(deleted)} unavailable videos\n"
         f"{', '.join(deleted) if deleted else 'None'}"
     )
-    
+
 async def handle_video_reply(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Handle when someone replies to a video without using /addvideo"""
     if await is_admin(update):
         await update.message.reply_text("Tip: Use /addvideo <name> to save this video")
 
+async def test(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    await update.message.reply_text("Bot is working!")
+
 def main():
     global application
     application = Application.builder().token(TOKEN).build()
+
+    application.add_handler(CommandHandler("test", test))
+
     
     application.add_handler(MessageHandler(filters.VIDEO & filters.REPLY, handle_video_reply))
 
