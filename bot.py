@@ -13,7 +13,7 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 TOKEN = "7641317425:AAHfWDG6uHQZeG8BQ5JvuvjMFvLFgrqbh9Q"
-VIDEO_DB = "videos.json"  # File to store video IDs
+# VIDEO_DB = "videos.json"  # File to store video IDs
 
 # Load existing videos or create empty DB
 def load_videos() -> dict:
