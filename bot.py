@@ -1,6 +1,7 @@
 from telegram import Update
 from telegram.ext import Application, CommandHandler, ContextTypes
 import logging
+import os
 
 # Configure logging test
 logging.basicConfig(
@@ -9,7 +10,8 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
-TOKEN = "TELEGRAM_BOT_TOKEN"
+
+TOKEN = os.getenv("TELEGRAM_BOT_TOKEN")  # Load from environment variables
 
 VIDEOS = {
     "video1": "BAACAgUAAxkBAANbZ-G7Jn5y85BrBhyK-nfBOLTFjrIAArsXAAJPfhFX3fpc9xwmtt02BA",
