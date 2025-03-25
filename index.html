@@ -3,68 +3,196 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Get Videos via Telegram</title>
+    <title>Video Library - Get Videos via Telegram</title>
     <style>
         body {
-            font-family: Arial, sans-serif;
-            max-width: 600px;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            max-width: 800px;
             margin: 0 auto;
             padding: 20px;
+            background-color: #f8f9fa;
+            color: #333;
         }
         h1 {
             color: #0088cc;
             text-align: center;
+            margin-bottom: 30px;
+            font-weight: 600;
         }
-        .video-option {
-            display: block;
+        .search-container {
             margin: 20px 0;
-            padding: 15px;
-            background: #f0f8ff;
-            border-radius: 8px;
-            text-decoration: none;
-            color: #333;
-            border: 1px solid #0088cc;
-            text-align: center;
-            transition: all 0.3s;
+            display: flex;
+            gap: 10px;
         }
-        .video-option:hover {
+        #search {
+            flex: 1;
+            padding: 10px 15px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            font-size: 16px;
+        }
+        .video-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+            gap: 20px;
+            margin-top: 20px;
+        }
+        .video-card {
+            background: white;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+        .video-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+        }
+        .video-thumbnail {
+            height: 140px;
+            background-color: #e9ecef;
+            background-size: cover;
+            background-position: center;
+            position: relative;
+        }
+        .video-info {
+            padding: 15px;
+        }
+        .video-title {
+            font-weight: 600;
+            margin-bottom: 8px;
+            font-size: 18px;
+        }
+        .video-desc {
+            color: #6c757d;
+            font-size: 14px;
+            margin-bottom: 15px;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+        .video-button {
+            display: block;
+            text-align: center;
+            padding: 10px;
             background: #0088cc;
             color: white;
+            text-decoration: none;
+            border-radius: 6px;
+            font-weight: 500;
+            transition: background 0.2s;
+        }
+        .video-button:hover {
+            background: #006699;
         }
         .instructions {
-            margin-top: 30px;
-            padding: 15px;
-            background: #f9f9f9;
-            border-radius: 8px;
+            margin-top: 40px;
+            padding: 20px;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }
+        .loading {
+            text-align: center;
+            padding: 20px;
+            color: #6c757d;
+        }
+        @media (max-width: 600px) {
+            .video-grid {
+                grid-template-columns: 1fr;
+            }
         }
     </style>
 </head>
 <body>
-    <h1>Click to Receive Videos in Telegram</h1>
+    <h1>Video Library</h1>
     
-    <a href="https://t.me/lgbt_kino_bot?start=video1" class="video-option">
-        <strong>Video 1</strong><br>
-        Description of video 1
-    </a>
+    <div class="search-container">
+        <input type="text" id="search" placeholder="Search videos..." onkeyup="filterVideos()">
+    </div>
     
-    <a href="https://t.me/lgbt_kino_bot?start=video2" class="video-option">
-        <strong>Video 2</strong><br>
-        Description of video 2
-    </a>
+    <div id="video-container" class="video-grid">
+        <div class="loading">Loading videos...</div>
+    </div>
     
-    <a href="https://t.me/lgbt_kino_bot?start=video3" class="video-option">
-        <strong>Video 3</strong><br>
-        Description of video 3
-    </a>
-
     <div class="instructions">
-        <h3>How it works:</h3>
+        <h3>How to get videos:</h3>
         <ol>
-            <li>Click any video button above</li>
-            <li>Telegram will open (or ask you to install it)</li>
-            <li>Start chatting with the bot when prompted</li>
-            <li>You'll immediately receive the selected video</li>
+            <li>Click on any video card below</li>
+            <li>Telegram will open automatically</li>
+            <li>Start a chat with our bot if you haven't already</li>
+            <li>You'll receive the selected video instantly</li>
         </ol>
     </div>
+
+    <script>
+        // Sample video data - replace with actual API call in production
+        const videos = [
+            {
+                id: "video1",
+                title: "Amazing Nature Documentary",
+                description: "Explore the wonders of nature in this breathtaking documentary.",
+                thumbnail: "https://via.placeholder.com/300x200?text=Nature+Video",
+                botUsername: "lgbt_kino_bot"
+            },
+            {
+                id: "video2",
+                title: "City Life Time-lapse",
+                description: "Watch the city come alive in this beautiful time-lapse video.",
+                thumbnail: "https://via.placeholder.com/300x200?text=City+Video",
+                botUsername: "lgbt_kino_bot"
+            },
+            {
+                id: "video3",
+                title: "Cooking Tutorial",
+                description: "Learn to make delicious pasta from scratch with this tutorial.",
+                thumbnail: "https://via.placeholder.com/300x200?text=Cooking+Video",
+                botUsername: "lgbt_kino_bot"
+            }
+        ];
+
+        // Load videos when page loads
+        document.addEventListener('DOMContentLoaded', function() {
+            displayVideos(videos);
+        });
+
+        // Display videos in the grid
+        function displayVideos(videoList) {
+            const container = document.getElementById('video-container');
+            container.innerHTML = '';
+            
+            if (videoList.length === 0) {
+                container.innerHTML = '<div class="loading">No videos found</div>';
+                return;
+            }
+            
+            videoList.forEach(video => {
+                const videoCard = document.createElement('div');
+                videoCard.className = 'video-card';
+                videoCard.innerHTML = `
+                    <div class="video-thumbnail" style="background-image: url('${video.thumbnail}')"></div>
+                    <div class="video-info">
+                        <div class="video-title">${video.title}</div>
+                        <div class="video-desc">${video.description}</div>
+                        <a href="https://t.me/${video.botUsername}?start=${video.id}" class="video-button">
+                            Get This Video
+                        </a>
+                    </div>
+                `;
+                container.appendChild(videoCard);
+            });
+        }
+
+        // Filter videos based on search input
+        function filterVideos() {
+            const searchTerm = document.getElementById('search').value.toLowerCase();
+            const filteredVideos = videos.filter(video => 
+                video.title.toLowerCase().includes(searchTerm) || 
+                video.description.toLowerCase().includes(searchTerm)
+            );
+            displayVideos(filteredVideos);
+        }
+    </script>
 </body>
 </html>
