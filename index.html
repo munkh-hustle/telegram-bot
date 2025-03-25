@@ -137,51 +137,69 @@
             <li>Start a chat with our bot if you haven't already</li>
             <li>You'll receive the selected video instantly</li>
         </ol>
+        <p><strong>Note:</strong> You need to interact with the bot in Telegram first before videos can be sent.</p>
     </div>
 
     <script>
         // Configuration
         const BOT_USERNAME = "lgbt_kino_bot";
         
-        // Video data from your videos.json
+        // Complete video data with all required fields
         const videoData = {
             "video1": {
-                "title": "at UW",
-                "description": "Description of video 1",
-                "views": 100,
-                "thumbnail": "https://via.placeholder.com/300x200?text=Video+1"
+                "title": "Campus Life at UW",
+                "description": "A day in university life",
+                "views": 142,
+                "thumbnail": "https://via.placeholder.com/300x200/0088cc/ffffff?text=Campus+Life",
+                "file_id": "BAACAgUAAxkBAANbZ-G7Jn5y85BrBhyK-nfBOLTFjrIAArsXAAJPfhFX3fpc9xwmtt02BA"
             },
             "video2": {
-                "title": "GL movie",
-                "description": "Description of video 2",
-                "views": 85,
-                "thumbnail": "https://via.placeholder.com/300x200?text=Video+2"
+                "title": "GL Movie Highlights",
+                "description": "Best moments from the movie",
+                "views": 89,
+                "thumbnail": "https://via.placeholder.com/300x200/ff6b6b/ffffff?text=Movie+Highlights",
+                "file_id": "BAACAgUAAxkBAAMNZ-BVwwuQGbrw7tAlSwZxNTF0XNkAAtoTAAIbd_FWoxDx_THJMrA2BA"
             },
             "video3": {
-                "title": "Cat at my in front of laptop",
-                "description": "Description of video 3",
-                "views": 120,
-                "thumbnail": "https://via.placeholder.com/300x200?text=Video+3"
+                "title": "Cat on Keyboard",
+                "description": "My cat interrupting work as usual",
+                "views": 215,
+                "thumbnail": "https://via.placeholder.com/300x200/51cf66/ffffff?text=Cat+On+Keyboard",
+                "file_id": "BAACAgUAAxkBAANLZ-GxahVI_jp-wU5YINkVwjV_ISAAAqEXAAJPfhFXqdmcN96vlk42BA"
             },
             "tree_snow": {
-                "title": "Tree during snowstorm",
-                "description": "Beautiful winter tree",
-                "views": 75,
-                "thumbnail": "https://via.placeholder.com/300x200?text=Winter+Tree"
-            },
+                "title": "Winter Wonderland",
+                "description": "Beautiful tree during snowstorm",
+                "views": 76,
+                "thumbnail": "https://via.placeholder.com/300x200/f8f9fa/333333?text=Winter+Tree",
+                "file_id": "BAACAgUAAxkBAAP6Z-JDH76NpXcZF_1kDYWeYnu177oAAsIcAAJPfhlXBBB4SZO7CJw2BA"
+            }
         };
 
-        // Convert the video data to array format
-        const videos = Object.keys(videoData).map(id => ({
-            id: id,
-            ...videoData[id]
-        }));
-        
+        // Process video data into array format
+        function prepareVideos() {
+            try {
+                return Object.entries(videoData).map(([id, video]) => ({
+                    id: id,
+                    title: video.title || `Video ${id}`,
+                    description: video.description || "No description available",
+                    views: video.views || 0,
+                    thumbnail: video.thumbnail || `https://via.placeholder.com/300x200?text=Video+${id}`,
+                    file_id: video.file_id || ""
+                }));
+            } catch (error) {
+                console.error("Error preparing video data:", error);
+                showError("Failed to load video data. Please refresh the page.");
+                return [];
+            }
+        }
+
+        // Display videos in the grid
         function displayVideos(videoList) {
             const container = document.getElementById('video-container');
             const errorDiv = document.getElementById('error-message');
             
-            if (videoList.length === 0) {
+            if (!videoList || videoList.length === 0) {
                 container.innerHTML = '<div class="loading">No videos found</div>';
                 return;
             }
@@ -190,15 +208,24 @@
             errorDiv.style.display = 'none';
             
             videoList.forEach(video => {
+                if (!video.file_id) {
+                    console.warn(`Video ${video.id} has no file_id, skipping`);
+                    return;
+                }
+                
                 const videoCard = document.createElement('div');
                 videoCard.className = 'video-card';
                 videoCard.innerHTML = `
-                    <div class="video-thumbnail" style="background-image: url('${video.thumbnail || 'https://via.placeholder.com/300x200?text=No+Thumbnail'}')"></div>
+                    <div class="video-thumbnail" style="background-image: url('${video.thumbnail}')">
+                        ${video.views ? `<div class="video-views-badge">👁️ ${video.views}</div>` : ''}
+                    </div>
                     <div class="video-info">
                         <div class="video-title">${video.title}</div>
-                        <div class="video-desc">${video.description || 'No description available'}</div>
-                        <div class="video-views">👁️ ${video.views || 0} views</div>
-                        <a href="https://t.me/${BOT_USERNAME}?start=${video.id}" class="video-button">
+                        <div class="video-desc">${video.description}</div>
+                        <a href="https://t.me/${BOT_USERNAME}?start=${video.id}" 
+                           class="video-button"
+                           target="_blank"
+                           rel="noopener noreferrer">
                             Get This Video
                         </a>
                     </div>
@@ -207,6 +234,18 @@
             });
         }
 
+        // Filter videos based on search
+        function filterVideos() {
+            const searchTerm = document.getElementById('search').value.toLowerCase();
+            const filteredVideos = videos.filter(video => {
+                const titleMatch = video.title.toLowerCase().includes(searchTerm);
+                const descMatch = video.description.toLowerCase().includes(searchTerm);
+                return titleMatch || descMatch;
+            });
+            displayVideos(filteredVideos);
+        }
+
+        // Show error message
         function showError(message) {
             const container = document.getElementById('video-container');
             const errorDiv = document.getElementById('error-message');
@@ -216,18 +255,12 @@
             errorDiv.style.display = 'block';
         }
 
-        function filterVideos() {
-            const searchTerm = document.getElementById('search').value.toLowerCase();
-            const filteredVideos = videos.filter(video => 
-                video.title.toLowerCase().includes(searchTerm) || 
-                (video.description && video.description.toLowerCase().includes(searchTerm))
-            );
-            displayVideos(filteredVideos);
-        }
-
-        // Load videos when page loads
+        // Initialize the page
         document.addEventListener('DOMContentLoaded', () => {
-            displayVideos(videos);
+            const videos = prepareVideos();
+            if (videos.length > 0) {
+                displayVideos(videos);
+            }
         });
     </script>
 </body>

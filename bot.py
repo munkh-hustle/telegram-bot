@@ -20,9 +20,9 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 # Configuration
-TOKEN = "7641317425:AAHfWDG6uHQZeG8BQ5JvuvjMFvLFgrqbh9Q"  # From environment variables
+TOKEN = "7641317425:AAHfWDG6uHQZeG8BQ5JvuvjMFvLFgrqbh9Q"
 VIDEO_DB = "videos.json"
-ADMIN_IDS = [7905267896]  # Replace with your admin user IDs
+ADMIN_IDS = [7905267896]
 
 class VideoManager:
     def __init__(self):
@@ -32,7 +32,19 @@ class VideoManager:
         try:
             if Path(VIDEO_DB).exists():
                 with open(VIDEO_DB, "r") as f:
-                    return json.load(f)
+                    data = json.load(f)
+                    # Convert old format to new format if needed
+                    return {
+                        name: {
+                            "file_id": vid.get("file_id", ""),
+                            "title": vid.get("title", name),
+                            "description": vid.get("description", ""),
+                            "views": vid.get("views", 0),
+                            "thumbnail": vid.get("thumbnail", ""),
+                            "added_at": vid.get("added_at", datetime.now().isoformat())
+                        }
+                        for name, vid in data.items()
+                    }
         except Exception as e:
             logger.error(f"Error loading videos: {e}")
         return {}
@@ -50,8 +62,11 @@ class VideoManager:
     def add_video(self, name: str, file_id: str):
         self.videos[name] = {
             "file_id": file_id,
-            "added_at": datetime.now().isoformat(),
-            "views": 0
+            "title": name,
+            "description": "",
+            "views": 0,
+            "thumbnail": "",
+            "added_at": datetime.now().isoformat()
         }
         self.save_videos()
     
@@ -68,10 +83,7 @@ class VideoManager:
 video_manager = VideoManager()
 
 async def is_admin(update: Update) -> bool:
-    user_id = update.effective_user.id
-    print(f"DEBUG: Checking admin status for user_id={user_id}")
-    print(f"DEBUG: ADMIN_IDS={ADMIN_IDS}")
-    return user_id in ADMIN_IDS
+    return update.effective_user.id in ADMIN_IDS
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if context.args:
@@ -88,7 +100,7 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 async def send_video(update: Update, context: ContextTypes.DEFAULT_TYPE, video_name: str):
     video = video_manager.get_video(video_name)
-    if not video:
+    if not video or not video.get("file_id"):
         await update.message.reply_text("Video not found!")
         return
     
@@ -98,7 +110,7 @@ async def send_video(update: Update, context: ContextTypes.DEFAULT_TYPE, video_n
             video=video["file_id"],
             caption=f"Here's {video_name}!"
         )
-        video["views"] += 1
+        video["views"] = video.get("views", 0) + 1
         video_manager.save_videos()
     except Exception as e:
         logger.error(f"Error sending video: {e}")
@@ -110,44 +122,35 @@ async def list_videos(update: Update, context: ContextTypes.DEFAULT_TYPE):
         return
     
     message = "📁 Available Videos:\n" + "\n".join(
-        f"• {name} (Views: {data['views']}) - /{name}"
+        f"• {name} (Views: {data.get('views', 0)}) - /{name}"
         for name, data in video_manager.videos.items()
     )
     await update.message.reply_text(message)
 
 async def add_video(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    print("DEBUG: add_video triggered!")  # Temporary debug line
     if not await is_admin(update):
-        print("DEBUG: User is not admin!")
         await update.message.reply_text("Admin only command.")
         return
     
-    print("DEBUG: User is admin!")
-
     if not update.message.reply_to_message or not update.message.reply_to_message.video:
         await update.message.reply_text("Reply to a video with /addvideo <name>")
         return
     
-    # Get video name from command arguments or generate default
     video_name = " ".join(context.args) if context.args else f"video{len(video_manager.videos)+1}"
     video_id = update.message.reply_to_message.video.file_id
     
-    # Add video to manager
     video_manager.add_video(video_name, video_id)
     
-    # Create a proper handler with captured video_name
-    async def video_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
-        await send_video(update, context, video_name)
+    async def video_handler(u: Update, c: ContextTypes.DEFAULT_TYPE):
+        await send_video(u, c, video_name)
     
-    # Remove existing handler if any
+    # Update handlers
     for handler in application.handlers[0]:
         if isinstance(handler, CommandHandler) and handler.commands == {video_name}:
             application.remove_handler(handler)
             break
     
-    # Add new handler
     application.add_handler(CommandHandler(video_name, video_handler))
-    
     await update.message.reply_text(f"✅ Added '{video_name}'!")
 
 async def delete_video(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -161,7 +164,6 @@ async def delete_video(update: Update, context: ContextTypes.DEFAULT_TYPE):
     
     video_name = context.args[0]
     if video_manager.remove_video(video_name):
-        # Remove command handler
         for handler in application.handlers[0]:
             if isinstance(handler, CommandHandler) and handler.commands == {video_name}:
                 application.remove_handler(handler)
@@ -190,55 +192,43 @@ async def cleanup_videos(update: Update, context: ContextTypes.DEFAULT_TYPE):
         f"{', '.join(deleted) if deleted else 'None'}"
     )
 
-async def handle_video_reply(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    """Handle when someone replies to a video without using /addvideo"""
-    if await is_admin(update):
-        await update.message.reply_text("Tip: Use /addvideo <name> to save this video")
-
 async def test(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    await update.message.reply_text("Bot is working!")
+    await update.message.reply_text("✅ Bot is working!")
 
-def main():
-    application = Application.builder().token(TOKEN).build()
-    async def test(update: Update, context: ContextTypes.DEFAULT_TYPE):
-        print("🛠️ DEBUG: /test received!")  # Check terminal
-        await update.message.reply_text("TEST WORKING!")
-    application.add_handler(CommandHandler("test", test))
-    
+async def unknown(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    await update.message.reply_text("Command not recognized")
 
+async def error_handler(update: object, context: ContextTypes.DEFAULT_TYPE):
+    logger.error(f"Error: {context.error}", exc_info=context.error)
+    if isinstance(update, Update):
+        await update.message.reply_text("An error occurred. Please try again.")
+
+def setup_handlers(application):
     # Core commands
     application.add_handler(CommandHandler("start", start))
+    application.add_handler(CommandHandler("test", test))
     application.add_handler(CommandHandler("list", list_videos))
     
     # Admin commands
     application.add_handler(CommandHandler("addvideo", add_video))
     application.add_handler(CommandHandler("delete", delete_video))
     application.add_handler(CommandHandler("cleanup", cleanup_videos))
-
-    async def unknown(update: Update, context: ContextTypes.DEFAULT_TYPE):
-        print(f"⚠️ Unhandled command: {update.message.text}")
-        await update.message.reply_text("Command not recognized")
     
-    application.add_handler(MessageHandler(filters.COMMAND, unknown))
-    print("🔧 Bot started with debug handlers")
-    application.run_polling(drop_pending_updates=True)
-
     # Dynamic video commands
     for name in video_manager.videos:
         application.add_handler(
             CommandHandler(name, lambda u, c, n=name: send_video(u, c, n))
         )
-    application.add_handler(MessageHandler(filters.VIDEO & filters.REPLY, handle_video_reply))
-    # Error handler
-    application.add_error_handler(error_handler)
     
-    logger.info("Starting bot...")
-    application.run_polling()
+    # Fallback
+    application.add_handler(MessageHandler(filters.COMMAND, unknown))
 
-async def error_handler(update: object, context: ContextTypes.DEFAULT_TYPE):
-    logger.error(f"Error: {context.error}", exc_info=context.error)
-    if isinstance(update, Update):
-        await update.message.reply_text("An error occurred. Please try again.")
+def main():
+    global application
+    application = Application.builder().token(TOKEN).build()
+    setup_handlers(application)
+    logger.info("Starting bot...")
+    application.run_polling(drop_pending_updates=True)
 
 if __name__ == "__main__":
     main()
