@@ -92,30 +92,6 @@
         
         // Function to fetch videos from the bot
         async function fetchVideos(searchTerm = '') {
-<<<<<<< HEAD
-    const videoList = document.getElementById('video-list');
-    const loading = document.getElementById('loading');
-    
-    videoList.innerHTML = '';
-    loading.style.display = 'block';
-    
-    try {
-        const response = await fetch('http://localhost:5000/api/videos');
-        
-        if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
-        }
-        
-        const videoNames = await response.json();
-        
-        const filteredVideos = videoNames.filter(name => 
-            name.toLowerCase().includes(searchTerm.toLowerCase())
-        ).map(name => ({ id: name, name: name }));
-        
-        if (filteredVideos.length === 0) {
-            videoList.innerHTML = '<div class="no-results">No videos found</div>';
-            return;
-=======
         const videoList = document.getElementById('video-list');
         const loading = document.getElementById('loading');
         
@@ -151,7 +127,6 @@
             videoList.innerHTML = '<div class="no-results">Error loading videos</div>';
         } finally {
             loading.style.display = 'none';
->>>>>>> 6881490 (main-2)
         }
     }
     
