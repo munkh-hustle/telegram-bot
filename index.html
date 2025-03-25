@@ -92,6 +92,7 @@
         
         // Function to fetch videos from the bot
         async function fetchVideos(searchTerm = '') {
+<<<<<<< HEAD
     const videoList = document.getElementById('video-list');
     const loading = document.getElementById('loading');
     
@@ -114,7 +115,50 @@
         if (filteredVideos.length === 0) {
             videoList.innerHTML = '<div class="no-results">No videos found</div>';
             return;
+=======
+        const videoList = document.getElementById('video-list');
+        const loading = document.getElementById('loading');
+        
+        videoList.innerHTML = '';
+        loading.style.display = 'block';
+        
+        try {
+            // Fetch actual videos from your backend
+            const response = await fetch('http://localhost:5000/api/videos');
+            const videoNames = await response.json();
+            
+            const filteredVideos = videoNames.filter(name => 
+                name.toLowerCase().includes(searchTerm.toLowerCase())
+            ).map(name => ({ id: name, name: name }));
+            
+            if (filteredVideos.length === 0) {
+                videoList.innerHTML = '<div class="no-results">No videos found</div>';
+                return;
+            }
+            
+            filteredVideos.forEach(video => {
+                const videoItem = document.createElement('div');
+                videoItem.className = 'video-item';
+                videoItem.innerHTML = `
+                    <img src="https://via.placeholder.com/200x120?text=Video" alt="${video.name}">
+                    <div>${video.name}</div>
+                `;
+                videoItem.addEventListener('click', () => requestVideo(video.id));
+                videoList.appendChild(videoItem);
+            });
+        } catch (error) {
+            console.error('Error fetching videos:', error);
+            videoList.innerHTML = '<div class="no-results">Error loading videos</div>';
+        } finally {
+            loading.style.display = 'none';
+>>>>>>> 6881490 (main-2)
         }
+    }
+    
+    function requestVideo(videoName) {
+        // Open Telegram with the bot and send the video request
+        window.open(`https://t.me/${BOT_USERNAME}?start=video_${encodeURIComponent(videoName)}`, '_blank');
+    }
         
         filteredVideos.forEach(video => {
             const videoItem = document.createElement('div');
