@@ -2,12 +2,12 @@ import os
 import logging
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import (
-    Updater, 
-    CommandHandler, 
-    MessageHandler, 
-    Filters, 
-    CallbackContext, 
-    CallbackQueryHandler
+    Application,
+    CommandHandler,
+    MessageHandler,
+    CallbackContext,
+    CallbackQueryHandler,
+    filters
 )
 
 # Enable logging
@@ -44,27 +44,27 @@ def save_video_db():
         for name, file_id in video_db.items():
             f.write(f"{name},{file_id}\n")
 
-def start(update: Update, context: CallbackContext) -> None:
+async def start(update: Update, context: CallbackContext) -> None:
     """Send a message when the command /start is issued."""
     user = update.effective_user
-    update.message.reply_text(f'Hi {user.first_name}!')
+    await update.message.reply_text(f'Hi {user.first_name}!')
 
-def help_command(update: Update, context: CallbackContext) -> None:
+async def help_command(update: Update, context: CallbackContext) -> None:
     """Send a message when the command /help is issued."""
-    update.message.reply_text('Help!')
+    await update.message.reply_text('Help!')
 
 def is_admin(update: Update):
     """Check if user is admin"""
     return update.effective_user.id == ADMIN_ID
 
-def addvideo(update: Update, context: CallbackContext) -> None:
+async def addvideo(update: Update, context: CallbackContext) -> None:
     """Add video to database (admin only)"""
     if not is_admin(update):
-        update.message.reply_text("You don't have permission to use this command.")
+        await update.message.reply_text("You don't have permission to use this command.")
         return
     
     if not context.args:
-        update.message.reply_text("Usage: /addvideo <name> (reply to a video)")
+        await update.message.reply_text("Usage: /addvideo <name> (reply to a video)")
         return
     
     if update.message.reply_to_message and update.message.reply_to_message.video:
@@ -74,18 +74,18 @@ def addvideo(update: Update, context: CallbackContext) -> None:
         video_db[video_name] = video_file_id
         save_video_db()
         
-        update.message.reply_text(f"Video '{video_name}' added successfully!")
+        await update.message.reply_text(f"Video '{video_name}' added successfully!")
     else:
-        update.message.reply_text("Please reply to a video message with this command.")
+        await update.message.reply_text("Please reply to a video message with this command.")
 
-def rename(update: Update, context: CallbackContext) -> None:
+async def rename(update: Update, context: CallbackContext) -> None:
     """Rename video in database (admin only)"""
     if not is_admin(update):
-        update.message.reply_text("You don't have permission to use this command.")
+        await update.message.reply_text("You don't have permission to use this command.")
         return
     
     if len(context.args) < 2:
-        update.message.reply_text("Usage: /rename <old_name> <new_name>")
+        await update.message.reply_text("Usage: /rename <old_name> <new_name>")
         return
     
     old_name = ' '.join(context.args[:-1])
@@ -94,18 +94,18 @@ def rename(update: Update, context: CallbackContext) -> None:
     if old_name in video_db:
         video_db[new_name] = video_db.pop(old_name)
         save_video_db()
-        update.message.reply_text(f"Video renamed from '{old_name}' to '{new_name}'")
+        await update.message.reply_text(f"Video renamed from '{old_name}' to '{new_name}'")
     else:
-        update.message.reply_text(f"Video '{old_name}' not found.")
+        await update.message.reply_text(f"Video '{old_name}' not found.")
 
-def delete(update: Update, context: CallbackContext) -> None:
+async def delete(update: Update, context: CallbackContext) -> None:
     """Delete video from database (admin only)"""
     if not is_admin(update):
-        update.message.reply_text("You don't have permission to use this command.")
+        await update.message.reply_text("You don't have permission to use this command.")
         return
     
     if not context.args:
-        update.message.reply_text("Usage: /delete <name>")
+        await update.message.reply_text("Usage: /delete <name>")
         return
     
     video_name = ' '.join(context.args)
@@ -113,14 +113,14 @@ def delete(update: Update, context: CallbackContext) -> None:
     if video_name in video_db:
         del video_db[video_name]
         save_video_db()
-        update.message.reply_text(f"Video '{video_name}' deleted successfully!")
+        await update.message.reply_text(f"Video '{video_name}' deleted successfully!")
     else:
-        update.message.reply_text(f"Video '{video_name}' not found.")
+        await update.message.reply_text(f"Video '{video_name}' not found.")
 
-def list_videos(update: Update, context: CallbackContext) -> None:
+async def list_videos(update: Update, context: CallbackContext) -> None:
     """List all available videos"""
     if not video_db:
-        update.message.reply_text("No videos available.")
+        await update.message.reply_text("No videos available.")
         return
     
     keyboard = []
@@ -128,59 +128,53 @@ def list_videos(update: Update, context: CallbackContext) -> None:
         keyboard.append([InlineKeyboardButton(name, callback_data=f"video_{name}")])
     
     reply_markup = InlineKeyboardMarkup(keyboard)
-    update.message.reply_text('Available videos:', reply_markup=reply_markup)
+    await update.message.reply_text('Available videos:', reply_markup=reply_markup)
 
-def button(update: Update, context: CallbackContext) -> None:
+async def button(update: Update, context: CallbackContext) -> None:
     """Handle button presses"""
     query = update.callback_query
-    query.answer()
+    await query.answer()
     
     if query.data.startswith('video_'):
         video_name = query.data[6:]
         if video_name in video_db:
-            context.bot.send_video(
+            await context.bot.send_video(
                 chat_id=query.message.chat_id,
                 video=video_db[video_name],
                 caption=video_name
             )
         else:
-            query.edit_message_text(text=f"Video '{video_name}' not found.")
+            await query.edit_message_text(text=f"Video '{video_name}' not found.")
 
-def handle_video(update: Update, context: CallbackContext) -> None:
+async def handle_video(update: Update, context: CallbackContext) -> None:
     """Handle video messages"""
     if is_admin(update):
-        update.message.reply_text("To add this video, reply to it with /addvideo <name>")
+        await update.message.reply_text("To add this video, reply to it with /addvideo <name>")
 
 def main() -> None:
     """Start the bot."""
     # Load video database
     load_video_db()
     
-    # Create the Updater and pass it your bot's token.
-    updater = Updater("7641317425:AAHfWDG6uHQZeG8BQ5JvuvjMFvLFgrqbh9Q")
-
-    # Get the dispatcher to register handlers
-    dispatcher = updater.dispatcher
+    # Create the Application and pass it your bot's token.
+    application = Application.builder().token("7641317425:AAHfWDG6uHQZeG8BQ5JvuvjMFvLFgrqbh9Q").build()
 
     # on different commands - answer in Telegram
-    dispatcher.add_handler(CommandHandler("start", start))
-    dispatcher.add_handler(CommandHandler("help", help_command))
-    dispatcher.add_handler(CommandHandler("addvideo", addvideo))
-    dispatcher.add_handler(CommandHandler("rename", rename))
-    dispatcher.add_handler(CommandHandler("delete", delete))
-    dispatcher.add_handler(CommandHandler("list", list_videos))
+    application.add_handler(CommandHandler("start", start))
+    application.add_handler(CommandHandler("help", help_command))
+    application.add_handler(CommandHandler("addvideo", addvideo))
+    application.add_handler(CommandHandler("rename", rename))
+    application.add_handler(CommandHandler("delete", delete))
+    application.add_handler(CommandHandler("list", list_videos))
     
     # Handle button presses
-    dispatcher.add_handler(CallbackQueryHandler(button))
+    application.add_handler(CallbackQueryHandler(button))
     
     # on non command i.e video messages
-    dispatcher.add_handler(MessageHandler(Filters.video, handle_video))
+    application.add_handler(MessageHandler(filters.VIDEO, handle_video))
 
     # Start the Bot
-    updater.start_polling()
-
-    # Run the bot until you press Ctrl-C
-    updater.idle()
+    application.run_polling()
 
 if __name__ == '__main__':
     main()
