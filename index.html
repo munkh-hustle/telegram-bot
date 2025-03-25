@@ -72,6 +72,11 @@
             -webkit-box-orient: vertical;
             overflow: hidden;
         }
+        .video-views {
+            color: #6c757d;
+            font-size: 12px;
+            margin-bottom: 10px;
+        }
         .video-button {
             display: block;
             text-align: center;
@@ -98,6 +103,12 @@
             padding: 20px;
             color: #6c757d;
         }
+        .error-message {
+            color: #dc3545;
+            text-align: center;
+            padding: 20px;
+            display: none;
+        }
         @media (max-width: 600px) {
             .video-grid {
                 grid-template-columns: 1fr;
@@ -116,6 +127,8 @@
         <div class="loading">Loading videos...</div>
     </div>
     
+    <div id="error-message" class="error-message"></div>
+    
     <div class="instructions">
         <h3>How to get videos:</h3>
         <ol>
@@ -127,76 +140,46 @@
     </div>
 
     <script>
-        // Sample video data - replace with actual API call in production
-        const videos = [
-        {
-            id: "video1",
-            title: "Video 1",
-            description: "Description of video 1",
-            thumbnail: "https://via.placeholder.com/300x200?text=Video+1",
-            botUsername: "lgbt_kino_bot"
-        },
-        {
-            id: "video2",
-            title: "Video 2", 
-            description: "Description of video 2",
-            thumbnail: "https://via.placeholder.com/300x200?text=Video+2",
-            botUsername: "lgbt_kino_bot"
-        },
-        {
-            id: "video3",
-            title: "Video 3",
-            description: "Description of video 3",
-            thumbnail: "https://via.placeholder.com/300x200?text=Video+3",
-            botUsername: "lgbt_kino_bot"
-        },
-        {
-            id: "cat_idc",
-            title: "Cat Video",
-            description: "Cute cat video",
-            thumbnail: "https://via.placeholder.com/300x200?text=Cat+Video", 
-            botUsername: "lgbt_kino_bot"
-        },
-        {
-            id: "tree_snow",
-            title: "Snowy Tree",
-            description: "Beautiful winter tree",
-            thumbnail: "https://via.placeholder.com/300x200?text=Winter+Tree",
-            botUsername: "lgbt_kino_bot"
-        },
-        {
-            id: "ramen",
-            title: "Ramen Cooking",
-            description: "Delicious ramen recipe",
-            thumbnail: "https://via.placeholder.com/300x200?text=Ramen",
-            botUsername: "lgbt_kino_bot"
+        // Configuration - Update these values
+        const BOT_USERNAME = "your_bot_username"; // Replace with your bot username
+        const API_URL = "/api/videos"; // Replace with your API endpoint
+        
+        let videos = [];
+        
+        async function fetchVideos() {
+            try {
+                const response = await fetch(API_URL);
+                if (!response.ok) throw new Error('Failed to load videos');
+                videos = await response.json();
+                displayVideos(videos);
+            } catch (error) {
+                console.error('Error:', error);
+                showError("Failed to load videos. Please try again later.");
+            }
         }
-        ];
-
-        // Load videos when page loads
-        document.addEventListener('DOMContentLoaded', function() {
-            displayVideos(videos);
-        });
-
-        // Display videos in the grid
+        
         function displayVideos(videoList) {
             const container = document.getElementById('video-container');
-            container.innerHTML = '';
+            const errorDiv = document.getElementById('error-message');
             
             if (videoList.length === 0) {
                 container.innerHTML = '<div class="loading">No videos found</div>';
                 return;
             }
             
+            container.innerHTML = '';
+            errorDiv.style.display = 'none';
+            
             videoList.forEach(video => {
                 const videoCard = document.createElement('div');
                 videoCard.className = 'video-card';
                 videoCard.innerHTML = `
-                    <div class="video-thumbnail" style="background-image: url('${video.thumbnail}')"></div>
+                    <div class="video-thumbnail" style="background-image: url('${video.thumbnail || 'https://via.placeholder.com/300x200?text=No+Thumbnail'}')"></div>
                     <div class="video-info">
                         <div class="video-title">${video.title}</div>
-                        <div class="video-desc">${video.description}</div>
-                        <a href="https://t.me/${video.botUsername}?start=${video.id}" class="video-button">
+                        <div class="video-desc">${video.description || 'No description available'}</div>
+                        <div class="video-views">👁️ ${video.views || 0} views</div>
+                        <a href="https://t.me/${BOT_USERNAME}?start=${video.id}" class="video-button">
                             Get This Video
                         </a>
                     </div>
@@ -205,15 +188,26 @@
             });
         }
 
-        // Filter videos based on search input
+        function showError(message) {
+            const container = document.getElementById('video-container');
+            const errorDiv = document.getElementById('error-message');
+            
+            container.innerHTML = '';
+            errorDiv.textContent = message;
+            errorDiv.style.display = 'block';
+        }
+
         function filterVideos() {
             const searchTerm = document.getElementById('search').value.toLowerCase();
             const filteredVideos = videos.filter(video => 
                 video.title.toLowerCase().includes(searchTerm) || 
-                video.description.toLowerCase().includes(searchTerm)
+                (video.description && video.description.toLowerCase().includes(searchTerm))
             );
             displayVideos(filteredVideos);
         }
+
+        // Load videos when page loads
+        document.addEventListener('DOMContentLoaded', fetchVideos);
     </script>
 </body>
 </html>
