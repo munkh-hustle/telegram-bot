@@ -29,8 +29,21 @@ def save_videos(videos: dict):
 
 VIDEOS = load_videos()
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    """Send a message when the command /start is issued."""
-    await update.message.reply_text('Hello! I am your bot.')
+    """Handle /start command with deep linking."""
+    if context.args:
+        video_id = context.args[0]
+        if video_id in VIDEOS:
+            try:
+                await context.bot.send_video(
+                    chat_id=update.effective_chat.id,
+                    video=VIDEOS[video_id],
+                    caption=f"Here's your {video_id}!"
+                )
+                return
+            except Exception as e:
+                logger.error(f"Failed to send video: {e}")
+    
+    await update.message.reply_text('Hello! I am your bot. Use /list to see available videos.')
 async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     """Send a message when the command /help is issued."""
     await update.message.reply_text('Help message goes here!')
