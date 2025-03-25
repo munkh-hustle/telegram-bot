@@ -20,9 +20,9 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 # Configuration
-TOKEN = os.getenv("TELEGRAM_BOT_TOKEN")  # From environment variables
+TOKEN = "7641317425:AAHfWDG6uHQZeG8BQ5JvuvjMFvLFgrqbh9Q"  # From environment variables
 VIDEO_DB = "videos.json"
-ADMIN_IDS = [123456789]  # Replace with your admin user IDs
+ADMIN_IDS = [7905267896]  # Replace with your admin user IDs
 
 class VideoManager:
     def __init__(self):
