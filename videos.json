@@ -1,16 +1,38 @@
 {
   "video1": {
-    "file_id": "BAACAgUAAxkBAANbZ-G7Jn5y85BrBhyK-nfBOLTFjrIAArsXAAJPfhFX3fpc9xwmtt02BA",
-    "added_at": "2023-07-15T10:30:00",
-    "views": 42,
-    "description": "Sample video 1",
-    "tags": ["demo", "test"]
+      "title": "Video 1",
+      "description": "Description of video 1",
+      "views": 100,
+      "thumbnail": "https://via.placeholder.com/300x200?text=Video+1"
   },
-  "cat_video": {
-    "file_id": "BAACAgUAAxkBAAPuZ-JAI8SWC3fuiQecAuoWZPgWwwMAArYcAAJPfhlX7z5fIKvFTfI2BA",
-    "added_at": "2023-07-16T15:45:00",
-    "views": 125,
-    "description": "Cute cat compilation",
-    "tags": ["animals", "funny"]
+  "video2": {
+      "title": "Video 2",
+      "description": "Description of video 2",
+      "views": 85,
+      "thumbnail": "https://via.placeholder.com/300x200?text=Video+2"
+  },
+  "video3": {
+      "title": "Video 3",
+      "description": "Description of video 3",
+      "views": 120,
+      "thumbnail": "https://via.placeholder.com/300x200?text=Video+3"
+  },
+  "cat_idc": {
+      "title": "Cat Video",
+      "description": "Cute cat video",
+      "views": 250,
+      "thumbnail": "https://via.placeholder.com/300x200?text=Cat+Video"
+  },
+  "tree_snow": {
+      "title": "Snowy Tree",
+      "description": "Beautiful winter tree",
+      "views": 75,
+      "thumbnail": "https://via.placeholder.com/300x200?text=Winter+Tree"
+  },
+  "ramen": {
+      "title": "Ramen Cooking",
+      "description": "Delicious ramen recipe",
+      "views": 180,
+      "thumbnail": "https://via.placeholder.com/300x200?text=Ramen"
   }
 }
