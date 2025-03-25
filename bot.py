@@ -25,51 +25,8 @@ VIDEO_DB = "videos.json"
 ADMIN_IDS = [7905267896]
 
 class VideoManager:
-    def __init__(self):
-        self.videos = self.load_videos()
-    
-    def load_videos(self) -> dict:
-        try:
-            if Path(VIDEO_DB).exists():
-                with open(VIDEO_DB, "r") as f:
-                    data = json.load(f)
-                    # Convert old format to new format if needed
-                    return {
-                        name: {
-                            "file_id": vid.get("file_id", ""),
-                            "title": vid.get("title", name),
-                            "description": vid.get("description", ""),
-                            "views": vid.get("views", 0),
-                            "thumbnail": vid.get("thumbnail", ""),
-                            "added_at": vid.get("added_at", datetime.now().isoformat())
-                        }
-                        for name, vid in data.items()
-                    }
-        except Exception as e:
-            logger.error(f"Error loading videos: {e}")
-        return {}
-    
-    def save_videos(self):
-        try:
-            with open(VIDEO_DB, "w") as f:
-                json.dump(self.videos, f, indent=2)
-        except Exception as e:
-            logger.error(f"Error saving videos: {e}")
-    
     def video_exists(self, name: str) -> bool:
         return name in self.videos
-    
-    def add_video(self, name: str, file_id: str):
-        self.videos[name] = {
-            "file_id": file_id,
-            "title": name,
-            "description": "",
-            "views": 0,
-            "thumbnail": "",
-            "added_at": datetime.now().isoformat()
-        }
-        self.save_videos()
-    
     def remove_video(self, name: str) -> bool:
         if name in self.videos:
             del self.videos[name]
@@ -111,7 +68,6 @@ async def send_video(update: Update, context: ContextTypes.DEFAULT_TYPE, video_n
             caption=f"Here's {video_name}!"
         )
         video["views"] = video.get("views", 0) + 1
-        video_manager.save_videos()
     except Exception as e:
         logger.error(f"Error sending video: {e}")
         await update.message.reply_text("Failed to send video.")
