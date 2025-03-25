@@ -1,8 +1,16 @@
 {
-  "video1": "BAACAgUAAxkBAANbZ-G7Jn5y85BrBhyK-nfBOLTFjrIAArsXAAJPfhFX3fpc9xwmtt02BA",
-  "video2": "BAACAgUAAxkBAAMNZ-BVwwuQGbrw7tAlSwZxNTF0XNkAAtoTAAIbd_FWoxDx_THJMrA2BA",
-  "video3": "BAACAgUAAxkBAANLZ-GxahVI_jp-wU5YINkVwjV_ISAAAqEXAAJPfhFXqdmcN96vlk42BA",
-  "cat_idc": "BAACAgUAAxkBAAPuZ-JAI8SWC3fuiQecAuoWZPgWwwMAArYcAAJPfhlX7z5fIKvFTfI2BA",
-  "tree_snow": "BAACAgUAAxkBAAP6Z-JDH76NpXcZF_1kDYWeYnu177oAAsIcAAJPfhlXBBB4SZO7CJw2BA",
-  "ramen": "BAACAgUAAxkBAAP9Z-JDTyVB0wypAY8KpKc2w7CuTGwAAsQcAAJPfhlXkYlUJWYjL_42BA"
+  "video1": {
+    "file_id": "BAACAgUAAxkBAANbZ-G7Jn5y85BrBhyK-nfBOLTFjrIAArsXAAJPfhFX3fpc9xwmtt02BA",
+    "added_at": "2023-07-15T10:30:00",
+    "views": 42,
+    "description": "Sample video 1",
+    "tags": ["demo", "test"]
+  },
+  "cat_video": {
+    "file_id": "BAACAgUAAxkBAAPuZ-JAI8SWC3fuiQecAuoWZPgWwwMAArYcAAJPfhlX7z5fIKvFTfI2BA",
+    "added_at": "2023-07-16T15:45:00",
+    "views": 125,
+    "description": "Cute cat compilation",
+    "tags": ["animals", "funny"]
+  }
 }
