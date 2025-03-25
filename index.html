@@ -3,258 +3,165 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Video Library - Get Videos via Telegram</title>
+    <title>Video Bot Website</title>
     <style>
         body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            font-family: Arial, sans-serif;
             max-width: 800px;
             margin: 0 auto;
             padding: 20px;
-            background-color: #f8f9fa;
-            color: #333;
+            background-color: #f5f5f5;
         }
         h1 {
-            color: #0088cc;
+            color: #333;
             text-align: center;
-            margin-bottom: 30px;
-            font-weight: 600;
         }
         .search-container {
-            margin: 20px 0;
             display: flex;
-            gap: 10px;
+            margin-bottom: 20px;
         }
-        #search {
-            flex: 1;
-            padding: 10px 15px;
-            border: 2px solid #ddd;
-            border-radius: 8px;
+        #search-input {
+            flex-grow: 1;
+            padding: 10px;
             font-size: 16px;
         }
-        .video-grid {
+        #search-button {
+            padding: 10px 20px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        #search-button:hover {
+            background-color: #45a049;
+        }
+        #video-list {
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
-            gap: 20px;
-            margin-top: 20px;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 15px;
         }
-        .video-card {
-            background: white;
-            border-radius: 12px;
-            overflow: hidden;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-            transition: transform 0.3s ease, box-shadow 0.3s ease;
-        }
-        .video-card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 10px 20px rgba(0,0,0,0.1);
-        }
-        .video-thumbnail {
-            height: 140px;
-            background-color: #e9ecef;
-            background-size: cover;
-            background-position: center;
-            position: relative;
-        }
-        .video-info {
+        .video-item {
+            background-color: white;
+            border-radius: 5px;
             padding: 15px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            text-align: center;
+            cursor: pointer;
+            transition: transform 0.2s;
         }
-        .video-title {
-            font-weight: 600;
-            margin-bottom: 8px;
-            font-size: 18px;
+        .video-item:hover {
+            transform: translateY(-5px);
         }
-        .video-desc {
-            color: #6c757d;
-            font-size: 14px;
-            margin-bottom: 15px;
-            display: -webkit-box;
-            -webkit-line-clamp: 2;
-            -webkit-box-orient: vertical;
-            overflow: hidden;
-        }
-        .video-views {
-            color: #6c757d;
-            font-size: 12px;
+        .video-item img {
+            width: 100%;
+            height: 120px;
+            object-fit: cover;
+            border-radius: 5px;
             margin-bottom: 10px;
         }
-        .video-button {
-            display: block;
+        #loading {
             text-align: center;
-            padding: 10px;
-            background: #0088cc;
-            color: white;
-            text-decoration: none;
-            border-radius: 6px;
-            font-weight: 500;
-            transition: background 0.2s;
-        }
-        .video-button:hover {
-            background: #006699;
-        }
-        .instructions {
-            margin-top: 40px;
-            padding: 20px;
-            background: white;
-            border-radius: 12px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
-        }
-        .loading {
-            text-align: center;
-            padding: 20px;
-            color: #6c757d;
-        }
-        .error-message {
-            color: #dc3545;
-            text-align: center;
-            padding: 20px;
             display: none;
         }
-        @media (max-width: 600px) {
-            .video-grid {
-                grid-template-columns: 1fr;
-            }
+        .no-results {
+            text-align: center;
+            color: #666;
+            grid-column: 1 / -1;
         }
     </style>
 </head>
 <body>
-    <h1>Video Library</h1>
+    <h1>Video Collection</h1>
     
     <div class="search-container">
-        <input type="text" id="search" placeholder="Search videos..." onkeyup="filterVideos()">
+        <input type="text" id="search-input" placeholder="Search videos...">
+        <button id="search-button">Search</button>
     </div>
     
-    <div id="video-container" class="video-grid">
-        <div class="loading">Loading videos...</div>
+    <div id="loading">Loading videos...</div>
+    
+    <div id="video-list">
+        <!-- Videos will be loaded here -->
     </div>
     
-    <div id="error-message" class="error-message"></div>
-    
-    <div class="instructions">
-        <h3>How to get videos:</h3>
-        <ol>
-            <li>Click on any video card below</li>
-            <li>Telegram will open automatically</li>
-            <li>Start a chat with our bot if you haven't already</li>
-            <li>You'll receive the selected video instantly</li>
-        </ol>
-        <p><strong>Note:</strong> You need to interact with the bot in Telegram first before videos can be sent.</p>
-    </div>
-
     <script>
-        // Configuration
-        const BOT_USERNAME = "lgbt_kino_bot";
+        // Replace with your Telegram bot token and chat ID
+        const BOT_TOKEN = '7641317425:AAHfWDG6uHQZeG8BQ5JvuvjMFvLFgrqbh9Q';
+        const CHAT_ID = 'lgbt_kino_bot';
         
-        // Complete video data with all required fields
-        const videoData = {
-            "video1": {
-                "title": "Campus Life at UW",
-                "description": "A day in university life",
-                "views": 142,
-                "thumbnail": "https://via.placeholder.com/300x200/0088cc/ffffff?text=Campus+Life",
-                "file_id": "BAACAgUAAxkBAANbZ-G7Jn5y85BrBhyK-nfBOLTFjrIAArsXAAJPfhFX3fpc9xwmtt02BA"
-            },
-            "video2": {
-                "title": "GL Movie Highlights",
-                "description": "Best moments from the movie",
-                "views": 89,
-                "thumbnail": "https://via.placeholder.com/300x200/ff6b6b/ffffff?text=Movie+Highlights",
-                "file_id": "BAACAgUAAxkBAAMNZ-BVwwuQGbrw7tAlSwZxNTF0XNkAAtoTAAIbd_FWoxDx_THJMrA2BA"
-            },
-            "video3": {
-                "title": "Cat on Keyboard",
-                "description": "My cat interrupting work as usual",
-                "views": 215,
-                "thumbnail": "https://via.placeholder.com/300x200/51cf66/ffffff?text=Cat+On+Keyboard",
-                "file_id": "BAACAgUAAxkBAANLZ-GxahVI_jp-wU5YINkVwjV_ISAAAqEXAAJPfhFXqdmcN96vlk42BA"
-            },
-        };
-
-        // Process video data into array format
-        function prepareVideos() {
+        // Function to fetch videos from the bot
+        async function fetchVideos(searchTerm = '') {
+            const videoList = document.getElementById('video-list');
+            const loading = document.getElementById('loading');
+            
+            videoList.innerHTML = '';
+            loading.style.display = 'block';
+            
             try {
-                return Object.entries(videoData).map(([id, video]) => ({
-                    id: id,
-                    title: video.title || `Video ${id}`,
-                    description: video.description || "No description available",
-                    views: video.views || 0,
-                    thumbnail: video.thumbnail || `https://via.placeholder.com/300x200?text=Video+${id}`,
-                    file_id: video.file_id || ""
-                }));
-            } catch (error) {
-                console.error("Error preparing video data:", error);
-                showError("Failed to load video data. Please refresh the page.");
-                return [];
-            }
-        }
-
-        // Display videos in the grid
-        function displayVideos(videoList) {
-            const container = document.getElementById('video-container');
-            const errorDiv = document.getElementById('error-message');
-            
-            if (!videoList || videoList.length === 0) {
-                container.innerHTML = '<div class="loading">No videos found</div>';
-                return;
-            }
-            
-            container.innerHTML = '';
-            errorDiv.style.display = 'none';
-            
-            videoList.forEach(video => {
-                if (!video.file_id) {
-                    console.warn(`Video ${video.id} has no file_id, skipping`);
+                // In a real implementation, you would fetch from your backend
+                // For demo purposes, we'll simulate with a timeout
+                await new Promise(resolve => setTimeout(resolve, 1000));
+                
+                // Simulated video data - in a real app, this would come from your bot
+                const simulatedVideos = [
+                ];
+                
+                const filteredVideos = simulatedVideos.filter(video => 
+                    video.name.toLowerCase().includes(searchTerm.toLowerCase())
+                );
+                
+                if (filteredVideos.length === 0) {
+                    videoList.innerHTML = '<div class="no-results">No videos found</div>';
                     return;
                 }
                 
-                const videoCard = document.createElement('div');
-                videoCard.className = 'video-card';
-                videoCard.innerHTML = `
-                    <div class="video-thumbnail" style="background-image: url('${video.thumbnail}')">
-                        ${video.views ? `<div class="video-views-badge">👁️ ${video.views}</div>` : ''}
-                    </div>
-                    <div class="video-info">
-                        <div class="video-title">${video.title}</div>
-                        <div class="video-desc">${video.description}</div>
-                        <a href="https://t.me/${BOT_USERNAME}?start=${video.id}" 
-                           class="video-button"
-                           target="_blank"
-                           rel="noopener noreferrer">
-                            Get This Video
-                        </a>
-                    </div>
-                `;
-                container.appendChild(videoCard);
-            });
+                filteredVideos.forEach(video => {
+                    const videoItem = document.createElement('div');
+                    videoItem.className = 'video-item';
+                    videoItem.innerHTML = `
+                        <img src="https://via.placeholder.com/200x120?text=Video+Thumbnail" alt="${video.name}">
+                        <div>${video.name}</div>
+                    `;
+                    videoItem.addEventListener('click', () => requestVideo(video.id));
+                    videoList.appendChild(videoItem);
+                });
+            } catch (error) {
+                console.error('Error fetching videos:', error);
+                videoList.innerHTML = '<div class="no-results">Error loading videos</div>';
+            } finally {
+                loading.style.display = 'none';
+            }
         }
-
-        // Filter videos based on search
-        function filterVideos() {
-            const searchTerm = document.getElementById('search').value.toLowerCase();
-            const filteredVideos = videos.filter(video => {
-                const titleMatch = video.title.toLowerCase().includes(searchTerm);
-                const descMatch = video.description.toLowerCase().includes(searchTerm);
-                return titleMatch || descMatch;
-            });
-            displayVideos(filteredVideos);
-        }
-
-        // Show error message
-        function showError(message) {
-            const container = document.getElementById('video-container');
-            const errorDiv = document.getElementById('error-message');
+        
+        // Function to request a video from the bot
+        function requestVideo(videoId) {
+            // In a real implementation, you would:
+            // 1. Open a Telegram chat with the bot
+            // 2. Send a command to request the video
+            // For demo purposes, we'll just show an alert
             
-            container.innerHTML = '';
-            errorDiv.textContent = message;
-            errorDiv.style.display = 'block';
+            alert(`Requesting video with ID: ${videoId}\n\nThe bot will send you the video in Telegram.`);
+            
+            // This would be the actual Telegram deep link:
+            // window.open(`https://t.me/${BOT_USERNAME}?start=video_${videoId}`);
         }
-
-        // Initialize the page
-        document.addEventListener('DOMContentLoaded', () => {
-            const videos = prepareVideos();
-            if (videos.length > 0) {
-                displayVideos(videos);
+        
+        // Event listeners
+        document.getElementById('search-button').addEventListener('click', () => {
+            const searchTerm = document.getElementById('search-input').value;
+            fetchVideos(searchTerm);
+        });
+        
+        document.getElementById('search-input').addEventListener('keyup', (e) => {
+            if (e.key === 'Enter') {
+                const searchTerm = document.getElementById('search-input').value;
+                fetchVideos(searchTerm);
             }
         });
+        
+        // Initial load
+        fetchVideos();
     </script>
 </body>
 </html>
