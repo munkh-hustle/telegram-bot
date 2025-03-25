@@ -200,11 +200,11 @@ async def test(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 def main():
     application = Application.builder().token(TOKEN).build()
-
+    async def test(update: Update, context: ContextTypes.DEFAULT_TYPE):
+        print("🛠️ DEBUG: /test received!")  # Check terminal
+        await update.message.reply_text("TEST WORKING!")
     application.add_handler(CommandHandler("test", test))
-
     
-    application.add_handler(MessageHandler(filters.VIDEO & filters.REPLY, handle_video_reply))
 
     # Core commands
     application.add_handler(CommandHandler("start", start))
@@ -214,13 +214,21 @@ def main():
     application.add_handler(CommandHandler("addvideo", add_video))
     application.add_handler(CommandHandler("delete", delete_video))
     application.add_handler(CommandHandler("cleanup", cleanup_videos))
+
+    async def unknown(update: Update, context: ContextTypes.DEFAULT_TYPE):
+        print(f"⚠️ Unhandled command: {update.message.text}")
+        await update.message.reply_text("Command not recognized")
     
+    application.add_handler(MessageHandler(filters.COMMAND, unknown))
+    print("🔧 Bot started with debug handlers")
+    application.run_polling(drop_pending_updates=True)
+
     # Dynamic video commands
     for name in video_manager.videos:
         application.add_handler(
             CommandHandler(name, lambda u, c, n=name: send_video(u, c, n))
         )
-    
+    application.add_handler(MessageHandler(filters.VIDEO & filters.REPLY, handle_video_reply))
     # Error handler
     application.add_error_handler(error_handler)
     
