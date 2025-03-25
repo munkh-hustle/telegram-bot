@@ -88,64 +88,52 @@
     <script>
         // Replace with your Telegram bot token and chat ID
         const BOT_TOKEN = '7641317425:AAHfWDG6uHQZeG8BQ5JvuvjMFvLFgrqbh9Q';
-        const CHAT_ID = 'lgbt_kino_bot';
+        const BOT_USERNAME = 'lgbt_kino_bot'; // Add this
         
         // Function to fetch videos from the bot
         async function fetchVideos(searchTerm = '') {
-            const videoList = document.getElementById('video-list');
-            const loading = document.getElementById('loading');
-            
-            videoList.innerHTML = '';
-            loading.style.display = 'block';
-            
-            try {
-                // In a real implementation, you would fetch from your backend
-                // For demo purposes, we'll simulate with a timeout
-                await new Promise(resolve => setTimeout(resolve, 1000));
-                
-                // Simulated video data - in a real app, this would come from your bot
-                const simulatedVideos = [
-                ];
-                
-                const filteredVideos = simulatedVideos.filter(video => 
-                    video.name.toLowerCase().includes(searchTerm.toLowerCase())
-                );
-                
-                if (filteredVideos.length === 0) {
-                    videoList.innerHTML = '<div class="no-results">No videos found</div>';
-                    return;
-                }
-                
-                filteredVideos.forEach(video => {
-                    const videoItem = document.createElement('div');
-                    videoItem.className = 'video-item';
-                    videoItem.innerHTML = `
-                        <img src="https://via.placeholder.com/200x120?text=Video+Thumbnail" alt="${video.name}">
-                        <div>${video.name}</div>
-                    `;
-                    videoItem.addEventListener('click', () => requestVideo(video.id));
-                    videoList.appendChild(videoItem);
-                });
-            } catch (error) {
-                console.error('Error fetching videos:', error);
-                videoList.innerHTML = '<div class="no-results">Error loading videos</div>';
-            } finally {
-                loading.style.display = 'none';
-            }
-        }
+        const videoList = document.getElementById('video-list');
+        const loading = document.getElementById('loading');
         
-        // Function to request a video from the bot
-        function requestVideo(videoId) {
-            // In a real implementation, you would:
-            // 1. Open a Telegram chat with the bot
-            // 2. Send a command to request the video
-            // For demo purposes, we'll just show an alert
+        videoList.innerHTML = '';
+        loading.style.display = 'block';
+        
+        try {
+            // Fetch actual videos from your backend
+            const response = await fetch('http://localhost:5000/api/videos');
+            const videoNames = await response.json();
             
-            alert(`Requesting video with ID: ${videoId}\n\nThe bot will send you the video in Telegram.`);
+            const filteredVideos = videoNames.filter(name => 
+                name.toLowerCase().includes(searchTerm.toLowerCase())
+            ).map(name => ({ id: name, name: name }));
             
-            // This would be the actual Telegram deep link:
-            // window.open(`https://t.me/${BOT_USERNAME}?start=video_${videoId}`);
+            if (filteredVideos.length === 0) {
+                videoList.innerHTML = '<div class="no-results">No videos found</div>';
+                return;
+            }
+            
+            filteredVideos.forEach(video => {
+                const videoItem = document.createElement('div');
+                videoItem.className = 'video-item';
+                videoItem.innerHTML = `
+                    <img src="https://via.placeholder.com/200x120?text=Video" alt="${video.name}">
+                    <div>${video.name}</div>
+                `;
+                videoItem.addEventListener('click', () => requestVideo(video.id));
+                videoList.appendChild(videoItem);
+            });
+        } catch (error) {
+            console.error('Error fetching videos:', error);
+            videoList.innerHTML = '<div class="no-results">Error loading videos</div>';
+        } finally {
+            loading.style.display = 'none';
         }
+    }
+    
+    function requestVideo(videoName) {
+        // Open Telegram with the bot and send the video request
+        window.open(`https://t.me/${BOT_USERNAME}?start=video_${encodeURIComponent(videoName)}`, '_blank');
+    }
         
         // Event listeners
         document.getElementById('search-button').addEventListener('click', () => {
