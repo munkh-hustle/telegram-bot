@@ -15,15 +15,6 @@ logger = logging.getLogger(__name__)
 TOKEN = "7641317425:AAHfWDG6uHQZeG8BQ5JvuvjMFvLFgrqbh9Q"
 VIDEO_DB = "videos.json"
 
-async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    """Send a message when the command /start is issued."""
-    await update.message.reply_text('Hello! I am your bot.')
-
-async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    """Send a message when the command /help is issued."""
-    await update.message.reply_text('Help message goes here!')
-
-
 def load_videos() -> dict:
     if Path(VIDEO_DB).exists():
         with open(VIDEO_DB, "r") as f:
@@ -35,6 +26,44 @@ def save_videos(videos: dict):
         json.dump(videos, f, indent=2)
 
 VIDEOS = load_videos()
+
+async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    """Send a message when the command /start is issued."""
+    await update.message.reply_text('Hello! I am your bot.')
+
+async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    """Send a message when the command /help is issued."""
+    await update.message.reply_text('Help message goes here!')
+
+async def send_video(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    """Send a video from the stored videos."""
+    command = update.message.text[1:]  # Remove the '/' from the command
+    if command in VIDEOS:
+        await update.message.reply_video(VIDEOS[command])
+    else:
+        await update.message.reply_text("Video not found!")
+
+async def add_video(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    """Add a new video to the storage."""
+    if not update.message.reply_to_message or not update.message.reply_to_message.video:
+        await update.message.reply_text("Please reply to a video message with /addvideo <name>")
+        return
+    
+    if not context.args:
+        await update.message.reply_text("Please specify a name for the video: /addvideo <name>")
+        return
+    
+    video_name = context.args[0]
+    video_id = update.message.reply_to_message.video.file_id
+    
+    VIDEOS[video_name] = video_id
+    save_videos(VIDEOS)
+    
+    # Add new command handler for this video
+    application.add_handler(CommandHandler(video_name, send_video))
+    application.add_handler(CommandHandler(f"delete_{video_name}", delete_video))
+    
+    await update.message.reply_text(f"✅ Video '{video_name}' added successfully!")
 
 async def delete_video(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     """Delete a video from the list (/delete <video_name>)"""
@@ -74,6 +103,7 @@ def main() -> None:
     
     # Handlers
     application.add_handler(CommandHandler("start", start))
+    application.add_handler(CommandHandler("help", help_command))
     application.add_handler(CommandHandler("addvideo", add_video))
     application.add_handler(CommandHandler("delete", delete_video))
     application.add_handler(CommandHandler("list", list_videos))
