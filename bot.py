@@ -15,6 +15,15 @@ logger = logging.getLogger(__name__)
 TOKEN = "7641317425:AAHfWDG6uHQZeG8BQ5JvuvjMFvLFgrqbh9Q"
 VIDEO_DB = "videos.json"
 
+async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    """Send a message when the command /start is issued."""
+    await update.message.reply_text('Hello! I am your bot.')
+
+async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    """Send a message when the command /help is issued."""
+    await update.message.reply_text('Help message goes here!')
+
+
 def load_videos() -> dict:
     if Path(VIDEO_DB).exists():
         with open(VIDEO_DB, "r") as f:
