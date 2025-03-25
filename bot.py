@@ -199,7 +199,6 @@ async def test(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text("Bot is working!")
 
 def main():
-    global application
     application = Application.builder().token(TOKEN).build()
 
     application.add_handler(CommandHandler("test", test))
