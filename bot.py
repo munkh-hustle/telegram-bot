@@ -77,6 +77,20 @@ async def list_videos(update: Update, context: ContextTypes.DEFAULT_TYPE) -> Non
             for name in VIDEOS.keys()
         )
         await update.message.reply_text(message)
+async def add_video(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    """Save a video from user's reply."""
+    if not update.message.reply_to_message or not update.message.reply_to_message.video:
+        await update.message.reply_text("Reply to a video with /addvideo <name>")
+        return
+
+    video_name = " ".join(context.args) if context.args else f"video{len(VIDEOS)+1}"
+    video_id = update.message.reply_to_message.video.file_id
+
+    VIDEOS[video_name] = video_id
+    with open(VIDEO_DB, "w") as f:
+        json.dump(VIDEOS, f, indent=2)
+
+    await update.message.reply_text(f"✅ Saved as '{video_name}'!")
 
 def main() -> None:
     global application
