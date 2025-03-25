@@ -1,7 +1,9 @@
 import os
 import logging
 from flask import Flask, jsonify
+from flask_cors import CORS  # Add this import
 import threading
+from flask import Flask, send_from_directory
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import (
     Application,
@@ -13,7 +15,14 @@ from telegram.ext import (
 )
 
 app = Flask(__name__)
+CORS(app)
 
+# Serve HTML
+@app.route('/')
+def serve_html():
+    return send_from_directory('.', 'index.html')
+
+# API endpoint
 @app.route('/api/videos')
 def get_videos():
     return jsonify(list(video_db.keys()))

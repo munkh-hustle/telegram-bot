@@ -92,43 +92,53 @@
         
         // Function to fetch videos from the bot
         async function fetchVideos(searchTerm = '') {
-        const videoList = document.getElementById('video-list');
-        const loading = document.getElementById('loading');
+    const videoList = document.getElementById('video-list');
+    const loading = document.getElementById('loading');
+    
+    videoList.innerHTML = '';
+    loading.style.display = 'block';
+    
+    try {
+        const response = await fetch('http://localhost:5000/api/videos');
         
-        videoList.innerHTML = '';
-        loading.style.display = 'block';
-        
-        try {
-            // Fetch actual videos from your backend
-            const response = await fetch('http://localhost:5000/api/videos');
-            const videoNames = await response.json();
-            
-            const filteredVideos = videoNames.filter(name => 
-                name.toLowerCase().includes(searchTerm.toLowerCase())
-            ).map(name => ({ id: name, name: name }));
-            
-            if (filteredVideos.length === 0) {
-                videoList.innerHTML = '<div class="no-results">No videos found</div>';
-                return;
-            }
-            
-            filteredVideos.forEach(video => {
-                const videoItem = document.createElement('div');
-                videoItem.className = 'video-item';
-                videoItem.innerHTML = `
-                    <img src="https://via.placeholder.com/200x120?text=Video" alt="${video.name}">
-                    <div>${video.name}</div>
-                `;
-                videoItem.addEventListener('click', () => requestVideo(video.id));
-                videoList.appendChild(videoItem);
-            });
-        } catch (error) {
-            console.error('Error fetching videos:', error);
-            videoList.innerHTML = '<div class="no-results">Error loading videos</div>';
-        } finally {
-            loading.style.display = 'none';
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
         }
+        
+        const videoNames = await response.json();
+        
+        const filteredVideos = videoNames.filter(name => 
+            name.toLowerCase().includes(searchTerm.toLowerCase())
+        ).map(name => ({ id: name, name: name }));
+        
+        if (filteredVideos.length === 0) {
+            videoList.innerHTML = '<div class="no-results">No videos found</div>';
+            return;
+        }
+        
+        filteredVideos.forEach(video => {
+            const videoItem = document.createElement('div');
+            videoItem.className = 'video-item';
+            videoItem.innerHTML = `
+                <img src="https://via.placeholder.com/200x120?text=Video" alt="${video.name}">
+                <div>${video.name}</div>
+            `;
+            videoItem.addEventListener('click', () => requestVideo(video.id));
+            videoList.appendChild(videoItem);
+        });
+    } catch (error) {
+        console.error('Error fetching videos:', error);
+        videoList.innerHTML = `
+            <div class="no-results">
+                Error loading videos. <br>
+                Make sure the bot backend is running. <br>
+                Error: ${error.message}
+            </div>
+        `;
+    } finally {
+        loading.style.display = 'none';
     }
+}
     
     function requestVideo(videoName) {
         // Open Telegram with the bot and send the video request
