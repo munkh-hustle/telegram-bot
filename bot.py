@@ -98,10 +98,10 @@ async def start(update: Update, context: CallbackContext) -> None:
                 caption=f"Here's your requested video: {video_name}"
             )
             return
-    else:
+    if video_name:  # Only show this if we were actually looking for a video
         await update.message.reply_text(f"Video '{video_name}' not found. Available videos: /list")
-    
-    await update.message.reply_text(f'Hi {user.first_name}! Use /list to see available videos.')
+    else:
+        await update.message.reply_text(f'Hi {user.first_name}! Use /list to see available videos.')
     
 
 async def help_command(update: Update, context: CallbackContext) -> None:
@@ -190,19 +190,25 @@ async def button(update: Update, context: CallbackContext) -> None:
     query = update.callback_query
     await query.answer()
     
-    if query.data.startswith('video_'):
-        video_name = query.data[6:]
-        if video_name in video_db:
-            user = query.from_user
-            record_user_activity(user.id, user.username, video_name)
-            
-            await context.bot.send_video(
-                chat_id=query.message.chat_id,
-                video=video_db[video_name],
-                caption=video_name
-            )
-        else:
-            await query.edit_message_text(text=f"Video '{video_name}' not found.")
+    try:
+        if query.data.startswith('video_'):
+            video_name = query.data[6:]
+            if video_name in video_db:
+                user = query.from_user
+                record_user_activity(user.id, user.username, video_name)
+
+                await context.bot.send_video(
+                    chat_id=query.message.chat_id,
+                    video=video_db[video_name],
+                    caption=video_name
+                )
+            else:
+                await query.edit_message_text(text=f"Video '{video_name}' not found.")
+    except Exception as e:
+        logger.error(f"Error handling button press: {e}")
+        await query.edit_message_text(
+            text="Sorry, an error occurred while processing your request."
+        )
 
 async def handle_video(update: Update, context: CallbackContext) -> None:
     """Handle video messages"""
@@ -239,6 +245,15 @@ async def user_stats(update: Update, context: CallbackContext) -> None:
     
     await update.message.reply_text('\n'.join(message))
 
+async def error_handler(update: Update, context: CallbackContext) -> None:
+    """Log errors and send a message to the user"""
+    logger.error(msg="Exception while handling update:", exc_info=context.error)
+    
+    if update and update.effective_message:
+        await update.effective_message.reply_text(
+            "Sorry, an error occurred while processing your request."
+        )
+
 def main() -> None:
     """Start the bot."""
     # Load video database
@@ -261,6 +276,8 @@ def main() -> None:
     
     # on non command i.e video messages
     application.add_handler(MessageHandler(filters.VIDEO, handle_video))
+    
+    application.add_error_handler(error_handler)
 
     # Start the Bot
     application.run_polling()
