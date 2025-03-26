@@ -338,8 +338,7 @@ def main() -> None:
     sync_video_data()
     
     # Create the Application and pass it your bot's token.
-    TOKEN = os.getenv('7641317425:AAHfWDG6uHQZeG8BQ5JvuvjMFvLFgrqbh9Q')
-    application = Application.builder().token(TOKEN).build()
+    application = Application.builder().token("7641317425:AAHfWDG6uHQZeG8BQ5JvuvjMFvLFgrqbh9Q").build()
 
     # on different commands - answer in Telegram
     application.add_handler(CommandHandler("sync", sync))  # Add this line
