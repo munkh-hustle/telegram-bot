@@ -1,5 +1,7 @@
 import os
 import logging
+import json
+from datetime import datetime
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import (
     Application,
@@ -19,6 +21,9 @@ logger = logging.getLogger(__name__)
 # Admin ID - replace with your actual admin ID
 ADMIN_ID = 7905267896
 
+# User activity log file
+USER_ACTIVITY_FILE = 'user_activity.json'
+
 # Directory to store videos
 VIDEO_DIR = 'videos'
 if not os.path.exists(VIDEO_DIR):
@@ -26,6 +31,39 @@ if not os.path.exists(VIDEO_DIR):
 
 # Dictionary to store video IDs and names
 video_db = {}
+
+def load_user_activity():
+    """Load user activity data from file"""
+    try:
+        with open(USER_ACTIVITY_FILE, 'r') as f:
+            return json.load(f)
+    except (FileNotFoundError, json.JSONDecodeError):
+        return {}
+def save_user_activity(activity_data):
+    """Save user activity data to file"""
+    with open(USER_ACTIVITY_FILE, 'w') as f:
+        json.dump(activity_data, f, indent=2)
+def record_user_activity(user_id, username, video_name):
+    """Record that a video was sent to a user"""
+    activity_data = load_user_activity()
+    
+    user_id_str = str(user_id)
+    timestamp = datetime.now().isoformat()
+    
+    if user_id_str not in activity_data:
+        activity_data[user_id_str] = {
+            'username': username,
+            'videos': []
+        }
+    
+    activity_data[user_id_str]['videos'].append({
+        'video_name': video_name,
+        'timestamp': timestamp
+    })
+    
+    save_user_activity(activity_data)
+
+
 
 def load_video_db():
     """Load video database from file"""
@@ -53,6 +91,7 @@ async def start(update: Update, context: CallbackContext) -> None:
         video_name = context.args[0][6:]  # Remove 'video_' prefix
         if video_name in video_db:
             await update.message.reply_text("Sending your video...")
+            record_user_activity(user.id, user.username, video_name)
             await context.bot.send_video(
                 chat_id=update.effective_chat.id,
                 video=video_db[video_name],
@@ -154,6 +193,9 @@ async def button(update: Update, context: CallbackContext) -> None:
     if query.data.startswith('video_'):
         video_name = query.data[6:]
         if video_name in video_db:
+            user = query.from_user
+            record_user_activity(user.id, user.username, video_name)
+            
             await context.bot.send_video(
                 chat_id=query.message.chat_id,
                 video=video_db[video_name],
@@ -166,6 +208,36 @@ async def handle_video(update: Update, context: CallbackContext) -> None:
     """Handle video messages"""
     if is_admin(update):
         await update.message.reply_text("To add this video, reply to it with /addvideo <name>")
+async def user_stats(update: Update, context: CallbackContext) -> None:
+    """Show user activity statistics (admin only)"""
+    if not is_admin(update):
+        await update.message.reply_text("You don't have permission to use this command.")
+        return
+    
+    activity_data = load_user_activity()
+    
+    if not activity_data:
+        await update.message.reply_text("No user activity recorded yet.")
+        return
+    
+    message = ["📊 User Activity Report:"]
+    total_sends = 0
+    
+    for user_id, data in activity_data.items():
+        username = data.get('username', 'unknown')
+        video_count = len(data['videos'])
+        total_sends += video_count
+        last_video = data['videos'][-1]['video_name'] if data['videos'] else 'none'
+        
+        message.append(
+            f"\n👤 User: {username} (ID: {user_id})\n"
+            f"📹 Videos sent: {video_count}\n"
+            f"🎬 Last video: {last_video}"
+        )
+    
+    message.append(f"\n\n📈 Total videos sent: {total_sends}")
+    
+    await update.message.reply_text('\n'.join(message))
 
 def main() -> None:
     """Start the bot."""
@@ -182,6 +254,7 @@ def main() -> None:
     application.add_handler(CommandHandler("rename", rename))
     application.add_handler(CommandHandler("delete", delete))
     application.add_handler(CommandHandler("list", list_videos))
+    application.add_handler(CommandHandler("stats", user_stats))
     
     # Handle button presses
     application.add_handler(CallbackQueryHandler(button))
