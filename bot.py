@@ -126,7 +126,6 @@ async def addvideo(update: Update, context: CallbackContext) -> None:
         video_file_id = update.message.reply_to_message.video.file_id
         
         video_db[video_name] = video_file_id
-        save_video_db()
         
         await update.message.reply_text(f"Video '{video_name}' added successfully!")
     else:
@@ -147,7 +146,6 @@ async def rename(update: Update, context: CallbackContext) -> None:
     
     if old_name in video_db:
         video_db[new_name] = video_db.pop(old_name)
-        save_video_db()
         await update.message.reply_text(f"Video renamed from '{old_name}' to '{new_name}'")
     else:
         await update.message.reply_text(f"Video '{old_name}' not found.")
@@ -166,7 +164,6 @@ async def delete(update: Update, context: CallbackContext) -> None:
     
     if video_name in video_db:
         del video_db[video_name]
-        save_video_db()
         await update.message.reply_text(f"Video '{video_name}' deleted successfully!")
     else:
         await update.message.reply_text(f"Video '{video_name}' not found.")
