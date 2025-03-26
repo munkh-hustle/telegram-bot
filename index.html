@@ -172,9 +172,9 @@
         async function prepareVideos() {
             try {
                 const videoData = await loadVideoData();
-                return Object.entries(videoData).map(([id, video]) => ({
-                    id: id,
-                    title: video.title || `Video ${id}`,
+                return videoData.map(video => ({
+                    id: video.id,
+                    title: video.title || `Video ${video.id}`,
                     description: video.description || "No description available",
                     views: video.views || 0,
                     file_id: video.file_id || ""

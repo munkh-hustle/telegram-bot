@@ -1,26 +1,8 @@
 {
-    "studio": {
-        "title": "studio",
-        "description": "A day in university life",
-        "views": 142,
-        "file_id": "BAACAgUAAxkBAAIChGfjZWtkotWNV8-XmZbFSMENh4A5AALNEwACdhwhV1ldsaRCu7Y2NgQ"
-    },
-    "tree": {
-        "title": "tree",
-        "description": "Best moments from the movie",
-        "views": 89,
-        "file_id": "BAACAgUAAxkBAAICi2fjZrK_WM4JwUfrx4jgUB8aN8UKAALREwACdhwhVzB5S_fNmC9XNgQ"
-    },
-    "cat": {
-        "title": "Cat Video",
-        "description": "My cat being cute",
-        "views": 215,
-        "file_id": "BAACAgUAAxkBAAICj2fjZtCTZ1EFwYj8haDHFpHxN3MZAALSEwACdhwhVxf4NRSppke8NgQ"
-    },
-    "home": {
-        "title": "home",
-        "description": "Home video collection",
-        "views": 215,
-        "file_id": "BAACAgUAAxkBAAICsGfjq7KgfvjjX_r85sFqwYki28xuAAI1FAACRUsgV51vNhlAWtkbNgQ"
-    }
+  "a": {
+    "title": "a",
+    "description": "No description available",
+    "views": 0,
+    "file_id": "BAACAgUAAxkBAAIC_2fkJHRtkY9zi74oWYuTv-RV2yoMAAIgFgACRUsgV8zSERG3cKOENgQ"
+  }
 }
