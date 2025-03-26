@@ -1,8 +1,5 @@
 import os
 import logging
-from flask import Flask, jsonify
-from flask_cors import CORS  # Add this import
-import threading
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import (
     Application,
@@ -12,16 +9,6 @@ from telegram.ext import (
     CallbackQueryHandler,
     filters
 )
-
-app = Flask(__name__)
-CORS(app)
-
-@app.route('/api/videos')
-def get_videos():
-    return jsonify(list(video_db.keys()))
-
-def run_flask():
-    app.run(port=5000)
 
 # Enable logging
 logging.basicConfig(
@@ -60,19 +47,7 @@ def save_video_db():
 async def start(update: Update, context: CallbackContext) -> None:
     """Send a message when the command /start is issued."""
     user = update.effective_user
-    
-    # Check if this is a video request
-    if context.args and context.args[0].startswith('video_'):
-        video_name = context.args[0][6:]
-        if video_name in video_db:
-            await context.bot.send_video(
-                chat_id=update.effective_chat.id,
-                video=video_db[video_name],
-                caption=f"Here's your requested video: {video_name}"
-            )
-            return
-    
-    await update.message.reply_text(f'Hi {user.first_name}! Use /list to see available videos.')
+    await update.message.reply_text(f'Hi {user.first_name}!')
 
 async def help_command(update: Update, context: CallbackContext) -> None:
     """Send a message when the command /help is issued."""
@@ -180,11 +155,6 @@ def main() -> None:
     """Start the bot."""
     # Load video database
     load_video_db()
-
-    # Start Flask in a separate thread
-    flask_thread = threading.Thread(target=run_flask)
-    flask_thread.daemon = True
-    flask_thread.start()
     
     # Create the Application and pass it your bot's token.
     application = Application.builder().token("7641317425:AAHfWDG6uHQZeG8BQ5JvuvjMFvLFgrqbh9Q").build()
