@@ -212,6 +212,13 @@ async def rename(update: Update, context: CallbackContext) -> None:
     if old_name in video_db:
         video_db[new_name] = video_db.pop(old_name)
         save_video_db()  # Save to JSON file
+
+        # Also update video_data.json
+        video_data = load_video_data()
+        if old_name in video_data:
+            video_data[new_name] = video_data.pop(old_name)
+            with open('video_data.json', 'w') as f:
+                json.dump(video_data, f, indent=2)
         await update.message.reply_text(f"Video renamed from '{old_name}' to '{new_name}'")
     else:
         await update.message.reply_text(f"Video '{old_name}' not found.")
@@ -231,6 +238,13 @@ async def delete(update: Update, context: CallbackContext) -> None:
     if video_name in video_db:
         del video_db[video_name]
         save_video_db()  # Save to JSON file
+
+        video_data = load_video_data()
+        if video_name in video_data:
+            del video_data[video_name]
+            with open('video_data.json', 'w') as f:
+                json.dump(video_data, f, indent=2)
+
         await update.message.reply_text(f"Video '{video_name}' deleted successfully!")
     else:
         await update.message.reply_text(f"Video '{video_name}' not found.")
