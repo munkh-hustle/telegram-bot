@@ -65,22 +65,21 @@ def record_user_activity(user_id, username, video_name):
 
 
 
-def load_video_db():
-    """Load video database from file"""
-    global video_db
-    try:
-        with open('video_db.txt', 'r') as f:
-            for line in f:
-                name, file_id = line.strip().split(',')
-                video_db[name] = file_id
-    except FileNotFoundError:
-        video_db = {}
+video_db = {}
+try:
+    with open('video_db.txt', 'r') as f:
+        for line in f:
+            name, file_id = line.strip().split(',')
+            video_db[name] = file_id
+except FileNotFoundError:
+    print("No existing video_db.txt found")
+    video_db = {}
 
-def save_video_db():
-    """Save video database to file"""
-    with open('video_db.txt', 'w') as f:
-        for name, file_id in video_db.items():
-            f.write(f"{name},{file_id}\n")
+# Save to new json file
+with open('video_db.json', 'w') as f:
+    json.dump(video_db, f, indent=2)
+
+print("Migration complete. video_db.json created.")
 
 async def start(update: Update, context: CallbackContext) -> None:
     """Handle /start command with video requests"""
