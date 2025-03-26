@@ -83,6 +83,7 @@ def record_user_activity(user_id, username, video_name):
 async def start(update: Update, context: CallbackContext) -> None:
     """Handle /start command with video requests"""
     user = update.effective_user
+    video_name = None  # Initialize variable outside the if block
     
     # Check if this is a video request
     if context.args and context.args[0].startswith('video_'):
@@ -96,7 +97,7 @@ async def start(update: Update, context: CallbackContext) -> None:
                 caption=f"Here's your requested video: {video_name}"
             )
             return
-    if video_name:  # Only show this if we were actually looking for a video
+    if video_name is not None:  # Only show this if we were actually looking for a video
         await update.message.reply_text(f"Video '{video_name}' not found. Available videos: /list")
     else:
         await update.message.reply_text(f'Hi {user.first_name}! Use /list to see available videos.')
