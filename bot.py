@@ -45,9 +45,25 @@ def save_video_db():
             f.write(f"{name},{file_id}\n")
 
 async def start(update: Update, context: CallbackContext) -> None:
-    """Send a message when the command /start is issued."""
+    """Handle /start command with video requests"""
     user = update.effective_user
-    await update.message.reply_text(f'Hi {user.first_name}!')
+    
+    # Check if this is a video request
+    if context.args and context.args[0].startswith('video_'):
+        video_name = context.args[0][6:]  # Remove 'video_' prefix
+        if video_name in video_db:
+            await update.message.reply_text("Sending your video...")
+            await context.bot.send_video(
+                chat_id=update.effective_chat.id,
+                video=video_db[video_name],
+                caption=f"Here's your requested video: {video_name}"
+            )
+            return
+    else:
+        await update.message.reply_text(f"Video '{video_name}' not found. Available videos: /list")
+    
+    await update.message.reply_text(f'Hi {user.first_name}! Use /list to see available videos.')
+    
 
 async def help_command(update: Update, context: CallbackContext) -> None:
     """Send a message when the command /help is issued."""
