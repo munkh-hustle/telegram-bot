@@ -31,6 +31,21 @@ if not os.path.exists(VIDEO_DIR):
 
 # Dictionary to store video IDs and names
 video_db = {}
+def load_video_db():
+    """Load video database from JSON file"""
+    global video_db
+    try:
+        with open('video_db.json', 'r') as f:
+            video_db = json.load(f)
+    except (FileNotFoundError, json.JSONDecodeError):
+        video_db = {}
+
+def save_video_db():
+    """Save video database to JSON file"""
+    with open('video_db.json', 'w') as f:
+        json.dump(video_db, f, indent=2)
+
+load_video_db()
 
 def load_user_activity():
     """Load user activity data from file"""
@@ -39,10 +54,12 @@ def load_user_activity():
             return json.load(f)
     except (FileNotFoundError, json.JSONDecodeError):
         return {}
+    
 def save_user_activity(activity_data):
     """Save user activity data to file"""
     with open(USER_ACTIVITY_FILE, 'w') as f:
         json.dump(activity_data, f, indent=2)
+
 def record_user_activity(user_id, username, video_name):
     """Record that a video was sent to a user"""
     activity_data = load_user_activity()
@@ -62,24 +79,6 @@ def record_user_activity(user_id, username, video_name):
     })
     
     save_user_activity(activity_data)
-
-
-
-video_db = {}
-try:
-    with open('video_db.txt', 'r') as f:
-        for line in f:
-            name, file_id = line.strip().split(',')
-            video_db[name] = file_id
-except FileNotFoundError:
-    print("No existing video_db.txt found")
-    video_db = {}
-
-# Save to new json file
-with open('video_db.json', 'w') as f:
-    json.dump(video_db, f, indent=2)
-
-print("Migration complete. video_db.json created.")
 
 async def start(update: Update, context: CallbackContext) -> None:
     """Handle /start command with video requests"""
@@ -126,7 +125,7 @@ async def addvideo(update: Update, context: CallbackContext) -> None:
         video_file_id = update.message.reply_to_message.video.file_id
         
         video_db[video_name] = video_file_id
-        
+        save_video_db()
         await update.message.reply_text(f"Video '{video_name}' added successfully!")
     else:
         await update.message.reply_text("Please reply to a video message with this command.")
@@ -146,6 +145,7 @@ async def rename(update: Update, context: CallbackContext) -> None:
     
     if old_name in video_db:
         video_db[new_name] = video_db.pop(old_name)
+        save_video_db()  # Save to JSON file
         await update.message.reply_text(f"Video renamed from '{old_name}' to '{new_name}'")
     else:
         await update.message.reply_text(f"Video '{old_name}' not found.")
@@ -164,6 +164,7 @@ async def delete(update: Update, context: CallbackContext) -> None:
     
     if video_name in video_db:
         del video_db[video_name]
+        save_video_db()  # Save to JSON file
         await update.message.reply_text(f"Video '{video_name}' deleted successfully!")
     else:
         await update.message.reply_text(f"Video '{video_name}' not found.")
