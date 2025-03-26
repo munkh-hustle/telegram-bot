@@ -327,6 +327,7 @@ def main() -> None:
     application = Application.builder().token("7641317425:AAHfWDG6uHQZeG8BQ5JvuvjMFvLFgrqbh9Q").build()
 
     # on different commands - answer in Telegram
+    application.add_handler(CommandHandler("sync", sync))  # Add this line
     application.add_handler(CommandHandler("start", start))
     application.add_handler(CommandHandler("help", help_command))
     application.add_handler(CommandHandler("addvideo", addvideo))
@@ -334,7 +335,6 @@ def main() -> None:
     application.add_handler(CommandHandler("delete", delete))
     application.add_handler(CommandHandler("list", list_videos))
     application.add_handler(CommandHandler("stats", user_stats))
-    application.add_handler(CommandHandler("sync", sync))  # Add this line
     
     # Handle button presses
     application.add_handler(CallbackQueryHandler(button))
