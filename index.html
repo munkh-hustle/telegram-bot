@@ -146,27 +146,24 @@
         
         // Complete video data with all required fields
         const videoData = {
-            "video1": {
-                "title": "Campus Life at UW",
+            "studio": {
+                "title": "studio",
                 "description": "A day in university life",
                 "views": 142,
-                "thumbnail": "https://via.placeholder.com/300x200/0088cc/ffffff?text=Campus+Life",
-                "file_id": "BAACAgUAAxkBAANbZ-G7Jn5y85BrBhyK-nfBOLTFjrIAArsXAAJPfhFX3fpc9xwmtt02BA"
+                "file_id": "BAACAgUAAxkBAAIChGfjZWtkotWNV8-XmZbFSMENh4A5AALNEwACdhwhV1ldsaRCu7Y2NgQ"
             },
-            "video2": {
-                "title": "GL Movie Highlights",
+            "tree": {
+                "title": "tree",
                 "description": "Best moments from the movie",
                 "views": 89,
-                "thumbnail": "https://via.placeholder.com/300x200/ff6b6b/ffffff?text=Movie+Highlights",
-                "file_id": "BAACAgUAAxkBAAMNZ-BVwwuQGbrw7tAlSwZxNTF0XNkAAtoTAAIbd_FWoxDx_THJMrA2BA"
+                "file_id": "BAACAgUAAxkBAAICi2fjZrK_WM4JwUfrx4jgUB8aN8UKAALREwACdhwhVzB5S_fNmC9XNgQ"
             },
-            "video3": {
-                "title": "Cat on Keyboard",
+            "cat": {
+                "title": "cat",
                 "description": "My cat interrupting work as usual",
                 "views": 215,
-                "thumbnail": "https://via.placeholder.com/300x200/51cf66/ffffff?text=Cat+On+Keyboard",
-                "file_id": "BAACAgUAAxkBAANLZ-GxahVI_jp-wU5YINkVwjV_ISAAAqEXAAJPfhFXqdmcN96vlk42BA"
-            },
+                "file_id": "BAACAgUAAxkBAAICj2fjZtCTZ1EFwYj8haDHFpHxN3MZAALSEwACdhwhVxf4NRSppke8NgQ"
+            }
         };
 
         // Process video data into array format
@@ -177,7 +174,6 @@
                     title: video.title || `Video ${id}`,
                     description: video.description || "No description available",
                     views: video.views || 0,
-                    thumbnail: video.thumbnail || `https://via.placeholder.com/300x200?text=Video+${id}`,
                     file_id: video.file_id || ""
                 }));
             } catch (error) {
