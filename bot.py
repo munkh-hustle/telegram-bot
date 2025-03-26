@@ -80,6 +80,48 @@ def record_user_activity(user_id, username, video_name):
     
     save_user_activity(activity_data)
 
+def load_video_data():
+    """Load video metadata from JSON file"""
+    try:
+        with open('video_data.json', 'r') as f:
+            return json.load(f)
+    except (FileNotFoundError, json.JSONDecodeError) as e:
+        logger.error(f"Error loading video_data.json: {e}")
+        return {}
+def sync_video_data():
+    """
+    Synchronize video_db.json with video_data.json:
+    - Adds any missing videos from video_data.json
+    - Removes videos that no longer exist in video_data.json
+    - Preserves existing file_ids
+    """
+    try:
+        video_data = load_video_data()
+        changes_made = False
+        
+        # Add new videos from video_data.json
+        for name, data in video_data.items():
+            if name not in video_db and 'file_id' in data:
+                video_db[name] = data['file_id']
+                logger.info(f"Added new video: {name}")
+                changes_made = True
+        
+        # Remove videos that don't exist in video_data.json
+        for name in list(video_db.keys()):
+            if name not in video_data:
+                del video_db[name]
+                logger.info(f"Removed video: {name}")
+                changes_made = True
+        
+        if changes_made:
+            save_video_db()
+            logger.info("Video database synchronized with video_data.json")
+        return changes_made
+    except Exception as e:
+        logger.error(f"Error syncing video data: {e}")
+        return False
+
+
 async def start(update: Update, context: CallbackContext) -> None:
     """Handle /start command with video requests"""
     user = update.effective_user
@@ -127,9 +169,32 @@ async def addvideo(update: Update, context: CallbackContext) -> None:
         
         video_db[video_name] = video_file_id
         save_video_db()
+
+        # Update video_data.json if this is a new video
+        video_data = load_video_data()
+        if video_name not in video_data:
+            video_data[video_name] = {
+                "title": video_name,
+                "description": "No description available",
+                "views": 0,
+                "file_id": video_file_id
+            }
+            with open('video_data.json', 'w') as f:
+                json.dump(video_data, f, indent=2)
+
         await update.message.reply_text(f"Video '{video_name}' added successfully!")
     else:
         await update.message.reply_text("Please reply to a video message with this command.")
+async def sync(update: Update, context: CallbackContext) -> None:
+    """Manually sync video data (admin only)"""
+    if not is_admin(update):
+        await update.message.reply_text("You don't have permission to use this command.")
+        return
+    
+    if sync_video_data():
+        await update.message.reply_text("Video database synchronized successfully!")
+    else:
+        await update.message.reply_text("No changes needed - databases are already in sync.")
 
 async def rename(update: Update, context: CallbackContext) -> None:
     """Rename video in database (admin only)"""
@@ -254,6 +319,9 @@ async def error_handler(update: Update, context: CallbackContext) -> None:
 
 def main() -> None:
     """Start the bot."""
+    # Load and sync video database at startup
+    load_video_db()
+    sync_video_data()
     
     # Create the Application and pass it your bot's token.
     application = Application.builder().token("7641317425:AAHfWDG6uHQZeG8BQ5JvuvjMFvLFgrqbh9Q").build()
@@ -266,6 +334,7 @@ def main() -> None:
     application.add_handler(CommandHandler("delete", delete))
     application.add_handler(CommandHandler("list", list_videos))
     application.add_handler(CommandHandler("stats", user_stats))
+    application.add_handler(CommandHandler("sync", sync))  # Add this line
     
     # Handle button presses
     application.add_handler(CallbackQueryHandler(button))
