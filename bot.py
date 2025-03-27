@@ -36,7 +36,7 @@ def load_video_db():
     """Load video database from JSON file"""
     global video_db
     try:
-        with open('video_db.json', 'r') as f:
+        with open('video_db.json', 'r', encoding='utf-8') as f:
             video_db = json.load(f)
     except (FileNotFoundError, json.JSONDecodeError):
         video_db = {}
@@ -51,7 +51,7 @@ load_video_db()
 def load_user_activity():
     """Load user activity data from file"""
     try:
-        with open(USER_ACTIVITY_FILE, 'r') as f:
+        with open(USER_ACTIVITY_FILE, 'r', encoding='utf-8') as f:
             return json.load(f)
     except (FileNotFoundError, json.JSONDecodeError):
         return {}
@@ -84,7 +84,7 @@ def record_user_activity(user_id, username, video_name):
 def load_video_data():
     """Load video metadata from JSON file"""
     try:
-        with open('video_data.json', 'r') as f:
+        with open('video_data.json', 'r', encoding='utf-8') as f:
             return json.load(f)
     except (FileNotFoundError, json.JSONDecodeError) as e:
         logger.error(f"Error loading video_data.json: {e}")
