@@ -2,91 +2,13 @@
   "7905267896": {
     "username": null,
     "videos": [
-      {
-        "video_name": "studio",
-        "timestamp": "2025-03-26T11:00:36.030171"
-      },
-      {
-        "video_name": "cat",
-        "timestamp": "2025-03-26T11:01:04.593504"
-      },
-      {
-        "video_name": "studio",
-        "timestamp": "2025-03-26T11:25:10.461083"
-      },
-      {
-        "video_name": "a",
-        "timestamp": "2025-03-27T00:06:35.831741"
-      },
-      {
-        "video_name": "stud",
-        "timestamp": "2025-03-27T13:27:45.088231"
-      },
-      {
-        "video_name": "studio",
-        "timestamp": "2025-03-27T13:53:37.559977"
-      },
-      {
-        "video_name": "studio",
-        "timestamp": "2025-03-27T13:55:44.091345"
-      },
-      {
-        "video_name": "studio",
-        "timestamp": "2025-03-27T13:57:44.990948"
-      }
+      {}
     ]
   },
   "7942816218": {
     "username": "muunu03",
     "videos": [
-      {
-        "video_name": "studio",
-        "timestamp": "2025-03-26T11:24:44.794431"
-      },
-      {
-        "video_name": "studio",
-        "timestamp": "2025-03-26T15:23:49.891980"
-      },
-      {
-        "video_name": "studio",
-        "timestamp": "2025-03-26T15:41:16.437942"
-      },
-      {
-        "video_name": "cat",
-        "timestamp": "2025-03-26T15:49:39.100453"
-      },
-      {
-        "video_name": "home",
-        "timestamp": "2025-03-26T15:58:13.810019"
-      },
-      {
-        "video_name": "home",
-        "timestamp": "2025-03-26T17:48:25.781839"
-      },
-      {
-        "video_name": "pluto-1-2",
-        "timestamp": "2025-03-27T12:57:13.037949"
-      },
-      {
-        "video_name": "pluto-1-2",
-        "timestamp": "2025-03-27T13:36:59.853403"
-      },
-      {
-        "video_name": "studioooo",
-        "timestamp": "2025-03-27T13:37:02.204122"
-      },
-      {
-        "video_name": "stu",
-        "timestamp": "2025-03-27T13:40:50.055925"
-      },
-      {
-        "video_name": "studio",
-        "timestamp": "2025-03-27T14:00:23.030624"
-      },
-      {
-        "video_name": "studio",
-        "timestamp": "2025-03-27T14:08:25.370128"
-      }
+      {}
     ]
   }
 }
