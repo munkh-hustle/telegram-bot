@@ -219,10 +219,20 @@ async def rename(update: Update, context: CallbackContext) -> None:
         video_data = load_video_data()
         if old_name in video_data:
             video_data[new_name] = video_data.pop(old_name)
+            # Ensure title matches new name if it matched old name
             if video_data[new_name]['title'] == old_name:
                 video_data[new_name]['title'] = new_name
             with open('video_data.json', 'w') as f:
                 json.dump(video_data, f, indent=2)
+
+        # Update user activity logs
+        activity_data = load_user_activity()
+        for user_data in activity_data.values():
+            for video in user_data['videos']:
+                if video['video_name'] == old_name:
+                    video['video_name'] = new_name
+        save_user_activity(activity_data)
+        
         await update.message.reply_text(f"Video renamed from '{old_name}' to '{new_name}'")
     else:
         await update.message.reply_text(f"Video '{old_name}' not found.")
