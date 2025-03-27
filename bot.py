@@ -334,8 +334,10 @@ async def error_handler(update: Update, context: CallbackContext) -> None:
 
 def main() -> None:
     """Start the bot."""
-    # Load and sync video database at startup
+    
     load_dotenv()
+    
+    # Load and sync video database at startup
     load_video_db()
     sync_video_data()
 
