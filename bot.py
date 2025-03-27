@@ -184,22 +184,62 @@ def log_user_message(user_id, username, first_name, text, chat_type):
     except Exception as e:
         logger.error(f"Failed to log message: {e}")
 
+def reset_user_video_count(user_id):
+    """Reset a user's video count"""
+    activity_data = load_user_activity()
+    if str(user_id) in activity_data:
+        activity_data[str(user_id)]['videos'] = []
+        save_user_activity(activity_data)
+        return True
+    return False
+
+def unblock_user(user_id):
+    """Unblock a user and reset their video count"""
+    blocked_users = load_blocked_users()
+    if str(user_id) in blocked_users:
+        blocked_users[str(user_id)]['unblocked'] = True
+        blocked_users[str(user_id)]['unblocked_at'] = datetime.now().isoformat()
+        save_blocked_users(blocked_users)
+        reset_user_video_count(user_id)  # Reset their video count
+        return True
+    return False
+
+async def reset_user(update: Update, context: CallbackContext) -> None:
+    """Reset a user's video count (admin only)"""
+    if not is_admin(update):
+        await update.message.reply_text("Permission denied.")
+        return
+    
+    if not context.args:
+        await update.message.reply_text("Usage: /resetuser <user_id>")
+        return
+    
+    try:
+        user_id = int(context.args[0])
+        if reset_user_video_count(user_id):
+            await update.message.reply_text(f"User {user_id}'s video count has been reset.")
+        else:
+            await update.message.reply_text(f"User {user_id} not found or already has no videos.")
+    except ValueError:
+        await update.message.reply_text("Invalid user ID. Must be a number.")
+
 async def send_video_with_limit_check(update: Update, context: CallbackContext, user, video_name):
     """Handle video sending with limit checks"""
     if is_user_blocked(user.id):
         blocked_users = load_blocked_users()
         user_data = blocked_users.get(str(user.id), {})
         if user_data.get('unblocked'):
-            # Reset their count after unblock
-            activity_data = load_user_activity()
-            if str(user.id) in activity_data:
-                activity_data[str(user.id)]['videos'] = []
-                save_user_activity(activity_data)
+            
+
+            # If unblocked but still in blocked_users.json, remove them
+            del blocked_users[str(user.id)]
+            save_blocked_users(blocked_users)
+            reset_user_video_count(user.id)
+            
             await update.message.reply_text(
-                "You've been unblocked! You can now request videos again. "
-                "Remember the 5 video limit."
+                "You've been unblocked! Your video count has been reset. "
+                "You can now request videos again."
             )
-            unblock_user(user.id)  # Remove from blocked list
         else:
             await update.message.reply_text(
                 "You've reached the 5 video limit. Please wait for admin approval."
@@ -255,6 +295,30 @@ async def notify_admin_limit_reached(context: CallbackContext, user):
     except Exception as e:
         logger.error(f"Failed to notify admin: {e}")
 
+async def unblock_command(update: Update, context: CallbackContext) -> None:
+    """Unblock a user by ID (admin only)"""
+    if not is_admin(update):
+        await update.message.reply_text("Permission denied.")
+        return
+    
+    if not context.args:
+        await update.message.reply_text("Usage: /unblock <user_id>")
+        return
+    
+    try:
+        user_id = int(context.args[0])
+        if unblock_user(user_id):
+            await update.message.reply_text(f"User {user_id} has been unblocked.")
+            # Notify the user
+            await context.bot.send_message(
+                chat_id=user_id,
+                text="🎉 You've been unblocked by admin! You can now request videos again."
+            )
+        else:
+            await update.message.reply_text(f"User {user_id} wasn't blocked.")
+    except ValueError:
+        await update.message.reply_text("Invalid user ID. Must be a number.")
+
 async def handle_message(update: Update, context: CallbackContext) -> None:
     """Log all user messages"""
     user = update.effective_user
@@ -300,15 +364,34 @@ async def blocked_users(update: Update, context: CallbackContext) -> None:
         return
     
     message = ["🚫 Blocked Users:"]
+    keyboard = []
+
     for user_id, data in blocked_users.items():
+        if data.get('unblocked'):
+            status = "✅ Unblocked"
+        else:
+            status = "❌ Blocked"
+            # Add unblock button for blocked users
+            keyboard.append([
+                InlineKeyboardButton(
+                    f"Unblock {data.get('first_name', 'User')} (ID: {user_id})",
+                    callback_data=f"unblock_{user_id}"
+                )
+            ])
+        
         message.append(
             f"\n👤 {data.get('first_name', 'Unknown')} "
             f"(ID: {user_id}) - @{data.get('username', 'no_username')}\n"
             f"Blocked at: {data.get('blocked_at')}\n"
-            f"Status: {'Unblocked' if data.get('unblocked') else 'Blocked'}"
+            f"Status: {status}"
         )
+
+    reply_markup = InlineKeyboardMarkup(keyboard) if keyboard else None
     
-    await update.message.reply_text('\n'.join(message))
+    await update.message.reply_text(
+        '\n'.join(message),
+        reply_markup=reply_markup
+    )
 
 async def help_command(update: Update, context: CallbackContext) -> None:
     """Send a message when the command /help is issued."""
@@ -465,27 +548,31 @@ async def button(update: Update, context: CallbackContext) -> None:
         elif query.data.startswith('unblock_'):
             user_id = int(query.data[8:])
             if is_admin(update):
-                unblock_user(user_id)
-                blocked_users = load_blocked_users()
-                user_data = blocked_users.get(str(user_id), {})
-
-                try:
-                    await query.edit_message_text(
-                        text=f"User {user_data.get('first_name', 'Unknown')} "
-                             f"(ID: {user_id}) has been unblocked."
-                    )
-                except:
+                if unblock_user(user_id):
+                    blocked_users = load_blocked_users()
+                    user_data = blocked_users.get(str(user_id), {})
+                    
+                    try:
+                        await query.edit_message_text(
+                            text=f"✅ User {user_data.get('first_name', 'Unknown')} "
+                                 f"(ID: {user_id}) has been unblocked and their video count reset."
+                        )
+                    except:
+                        await context.bot.send_message(
+                            chat_id=ADMIN_ID,
+                            text=f"✅ User {user_data.get('first_name', 'Unknown')} "
+                                 f"(ID: {user_id}) has been unblocked and their video count reset."
+                        )
+                    
+                    # Notify the unblocked user
                     await context.bot.send_message(
-                        chat_id=ADMIN_ID,
-                        text=f"User {user_data.get('first_name', 'Unknown')} "
-                             f"(ID: {user_id}) has been unblocked."
+                        chat_id=user_id,
+                        text="🎉 You've been unblocked by admin! Your video count has been reset."
                     )
-                # Notify the user
-                await context.bot.send_message(
-                    chat_id=user_id,
-                    text="🎉 You've been unblocked! You can now request videos again. "
-                         "Remember the 5 video limit."
-                )
+                else:
+                    await query.edit_message_text(
+                        text=f"⚠️ User {user_id} wasn't blocked or couldn't be unblocked."
+                    )
                 
         elif query.data.startswith('keep_blocked_'):
             user_id = int(query.data[12:])
@@ -670,6 +757,9 @@ def main() -> None:
     application.add_handler(CommandHandler("list", list_videos))
     application.add_handler(CommandHandler("stats", user_stats))
     application.add_handler(CommandHandler("blocked", blocked_users))
+    application.add_handler(CommandHandler("unblock", unblock_command))
+    application.add_handler(CommandHandler("resetuser", reset_user))
+
     
     # Handle button presses
     application.add_handler(CallbackQueryHandler(button))
