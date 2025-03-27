@@ -204,6 +204,23 @@ def unblock_user(user_id):
         return True
     return False
 
+def log_sent_video(user_id, video_name):
+    """Log successfully sent videos with timestamp"""
+    log_entry = {
+        'timestamp': datetime.now().isoformat(),
+        'user_id': user_id,
+        'video_name': video_name,
+        'status': 'sent'
+    }
+    
+    try:
+        os.makedirs('logs', exist_ok=True)
+        with open('logs/video_delivery_log.json', 'a', encoding='utf-8') as f:
+            f.write(json.dumps(log_entry))
+            f.write('\n')
+    except Exception as e:
+        logger.error(f"Failed to log video delivery: {e}")
+
 async def reset_user(update: Update, context: CallbackContext) -> None:
     """Reset a user's video count (admin only)"""
     if not is_admin(update):
@@ -228,19 +245,7 @@ async def send_video_with_limit_check(update: Update, context: CallbackContext, 
     if is_user_blocked(user.id):
         blocked_users = load_blocked_users()
         user_data = blocked_users.get(str(user.id), {})
-        if user_data.get('unblocked'):
-            
-
-            # If unblocked but still in blocked_users.json, remove them
-            del blocked_users[str(user.id)]
-            save_blocked_users(blocked_users)
-            reset_user_video_count(user.id)
-            
-            await update.message.reply_text(
-                "You've been unblocked! Your video count has been reset. "
-                "You can now request videos again."
-            )
-        else:
+        if not user_data.get('unblocked'):
             await update.message.reply_text(
                 "You've reached the 5 video limit. Please wait for admin approval."
             )
@@ -260,6 +265,18 @@ async def send_video_with_limit_check(update: Update, context: CallbackContext, 
     unique_videos = len({v['video_name'] for v in user_videos})
     
     if unique_videos >= MAX_VIDEOS_BEFORE_BLOCK:
+
+        # Send the 5th video first
+        await context.bot.send_video(
+            chat_id=update.effective_chat.id,
+            video=video_db[video_name],
+            protect_content=True,
+            caption=f"Here's your requested video: {video_name}"
+        )
+
+        log_sent_video(user.id, video_name)  # Log the successful send
+
+        # Then block them
         block_user(user.id, user.username, user.first_name)
         await notify_admin_limit_reached(context, user)
         await update.message.reply_text(
@@ -268,12 +285,14 @@ async def send_video_with_limit_check(update: Update, context: CallbackContext, 
         )
         return False
     
+    # Send video if under limit
     await context.bot.send_video(
         chat_id=update.effective_chat.id,
         video=video_db[video_name],
         protect_content=True,
         caption=f"Here's your requested video: {video_name}"
     )
+    log_sent_video(user.id, video_name)  # Log the successful send
     return True
 
 async def notify_admin_limit_reached(context: CallbackContext, user):
@@ -444,6 +463,42 @@ async def sync(update: Update, context: CallbackContext) -> None:
     else:
         await update.message.reply_text("No changes needed - databases are already in sync.")
 
+async def video_logs(update: Update, context: CallbackContext) -> None:
+    """Show video delivery logs (admin only)"""
+    if not is_admin(update):
+        await update.message.reply_text("Permission denied.")
+        return
+    
+    try:
+        if not os.path.exists('logs/video_delivery_log.json'):
+            await update.message.reply_text("No video logs available yet.")
+            return
+        
+        with open('logs/video_delivery_log.json', 'r', encoding='utf-8') as f:
+            logs = [json.loads(line) for line in f if line.strip()]
+            
+        if not logs:
+            await update.message.reply_text("No video delivery logs found.")
+            return
+            
+        # Count unique videos sent
+        video_counts = {}
+        for log in logs:
+            video_counts[log['video_name']] = video_counts.get(log['video_name'], 0) + 1
+            
+        message = ["📊 Video Delivery Statistics:"]
+        message.append(f"\nTotal videos sent: {len(logs)}")
+        message.append("\nUnique videos sent:")
+        
+        for video, count in sorted(video_counts.items(), key=lambda x: x[1], reverse=True):
+            message.append(f"{video}: {count}")
+            
+        await update.message.reply_text('\n'.join(message))
+        
+    except Exception as e:
+        logger.error(f"Error reading video logs: {e}")
+        await update.message.reply_text("Error reading video logs.")
+
 async def rename(update: Update, context: CallbackContext) -> None:
     """Rename video in database (admin only)"""
     if not is_admin(update):
@@ -548,20 +603,25 @@ async def button(update: Update, context: CallbackContext) -> None:
         elif query.data.startswith('unblock_'):
             user_id = int(query.data[8:])
             if is_admin(update):
-                if unblock_user(user_id):
-                    blocked_users = load_blocked_users()
-                    user_data = blocked_users.get(str(user_id), {})
+                # Remove from blocked_users.json completely
+                blocked_users = load_blocked_users()
+                if str(user_id) in blocked_users:
+                    user_data = blocked_users.pop(str(user_id))
+                    save_blocked_users(blocked_users)
+
+                    # Reset their video count
+                    reset_user_video_count(user_id)
                     
                     try:
                         await query.edit_message_text(
                             text=f"✅ User {user_data.get('first_name', 'Unknown')} "
-                                 f"(ID: {user_id}) has been unblocked and their video count reset."
+                                 f"(ID: {user_id}) has been unblocked."
                         )
                     except:
                         await context.bot.send_message(
                             chat_id=ADMIN_ID,
                             text=f"✅ User {user_data.get('first_name', 'Unknown')} "
-                                 f"(ID: {user_id}) has been unblocked and their video count reset."
+                                 f"(ID: {user_id}) has been unblocked."
                         )
                     
                     # Notify the unblocked user
@@ -759,6 +819,7 @@ def main() -> None:
     application.add_handler(CommandHandler("blocked", blocked_users))
     application.add_handler(CommandHandler("unblock", unblock_command))
     application.add_handler(CommandHandler("resetuser", reset_user))
+    application.add_handler(CommandHandler("videologs", video_logs))
 
     
     # Handle button presses
