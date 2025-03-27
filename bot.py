@@ -135,7 +135,11 @@ def log_user_message(user_id, username, first_name, text, chat_type):
     }
     
     try:
-        with open('message_logs.json', 'a', encoding='utf-8') as f:
+        # Create directory if it doesn't exist
+        os.makedirs('logs', exist_ok=True)
+        log_file = os.path.join('logs', 'message_logs.json')
+
+        with open(log_file, 'a', encoding='utf-8') as f:
             f.write(json.dumps(log_entry, ensure_ascii=False) + '\n')
     except Exception as e:
         logger.error(f"Failed to log message: {e}")
@@ -348,6 +352,49 @@ async def button(update: Update, context: CallbackContext) -> None:
             text="Sorry, an error occurred while processing your request."
         )
 
+async def search_user_messages(update: Update, context: CallbackContext, search_term: str) -> None:
+    """Search through user messages for specific text"""
+    try:
+        if not os.path.exists('message_logs.json'):
+            await update.message.reply_text("No message logs available yet.")
+            return
+        
+        with open('message_logs.json', 'r', encoding='utf-8') as f:
+            # Read all lines as individual JSON objects
+            messages = [json.loads(line) for line in f if line.strip()]
+        
+        # Filter messages containing the search term (case insensitive)
+        results = [
+            msg for msg in messages 
+            if search_term.lower() in msg.get('text', '').lower()
+        ]
+        
+        if not results:
+            await update.message.reply_text(f"No messages found containing: {search_term}")
+            return
+        
+        # Format results with pagination
+        response = [f"🔍 Search results for '{search_term}':\n"]
+        for i, msg in enumerate(results[:10], 1):  # Show first 10 results
+            timestamp = datetime.fromisoformat(msg['timestamp']).strftime('%Y-%m-%d %H:%M')
+            response.append(
+                f"\n{i}. {timestamp} - @{msg.get('username', '?')} "
+                f"({msg.get('first_name', 'Unknown')}):\n"
+                f"{msg['text']}"
+            )
+        
+        if len(results) > 10:
+            response.append(f"\n\nℹ️ Showing 10 of {len(results)} results. Refine your search for better results.")
+        
+        # Split long messages to avoid Telegram's message length limit
+        full_response = '\n'.join(response)
+        for i in range(0, len(full_response), 4000):
+            await update.message.reply_text(full_response[i:i+4000])
+            
+    except Exception as e:
+        logger.error(f"Error searching messages: {e}")
+        await update.message.reply_text("An error occurred while searching messages.")
+
 async def handle_video(update: Update, context: CallbackContext) -> None:
     """Handle video messages"""
     if is_admin(update):
@@ -358,6 +405,11 @@ async def user_stats(update: Update, context: CallbackContext) -> None:
         await update.message.reply_text("You don't have permission to use this command.")
         return
     
+    # Check if this is a search request
+    if context.args and context.args[0].startswith('search:'):
+        search_term = ' '.join(context.args)[7:]  # Remove 'search:' prefix
+        return await search_user_messages(update, context, search_term)
+
     activity_data = load_user_activity()
     
     if not activity_data:
@@ -380,6 +432,7 @@ async def user_stats(update: Update, context: CallbackContext) -> None:
         )
     
     message.append(f"\n\n📈 Total videos sent: {total_sends}")
+    message.append("\n\n🔍 Search user messages with: /stats search:<query>")
     
     await update.message.reply_text('\n'.join(message))
 
