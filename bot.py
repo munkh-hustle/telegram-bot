@@ -123,6 +123,37 @@ def sync_video_data():
         logger.error(f"Error syncing video data: {e}")
         return False
 
+def log_user_message(user_id, username, first_name, text, chat_type):
+    """Save user messages to a separate log file"""
+    log_entry = {
+        'timestamp': datetime.now().isoformat(),
+        'user_id': user_id,
+        'username': username,
+        'first_name': first_name,
+        'chat_type': chat_type,
+        'text': text  # Actual message content
+    }
+    
+    try:
+        with open('message_logs.json', 'a', encoding='utf-8') as f:
+            f.write(json.dumps(log_entry, ensure_ascii=False) + '\n')
+    except Exception as e:
+        logger.error(f"Failed to log message: {e}")
+
+async def handle_message(update: Update, context: CallbackContext) -> None:
+    """Log all user messages"""
+    user = update.effective_user
+    message = update.effective_message
+    
+    # Don't log commands or videos (already handled)
+    if message.text and not message.text.startswith('/'):
+        log_user_message(
+            user_id=user.id,
+            username=user.username,
+            first_name=user.first_name,
+            text=message.text,
+            chat_type=update.effective_chat.type
+        )
 
 async def start(update: Update, context: CallbackContext) -> None:
     """Handle /start command with video requests"""
@@ -393,6 +424,7 @@ def main() -> None:
     
     # on non command i.e video messages
     application.add_handler(MessageHandler(filters.VIDEO, handle_video))
+    application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
     
     application.add_error_handler(error_handler)
 
