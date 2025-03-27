@@ -1,6 +1,6 @@
 {
   "pluto-1-2": {
-    "title": "Pluto Бүлэг-1 анги-2",
+    "title": "Pluto \u0411\u04af\u043b\u044d\u0433-1 \u0430\u043d\u0433\u0438-2",
     "description": "No description available",
     "views": 0,
     "file_id": "BAACAgUAAxkBAAMNZ-BVwwuQGbrw7tAlSwZxNTF0XNkAAtoTAAIbd_FWoxDx_THJMrA2BA"
@@ -16,5 +16,17 @@
     "description": "No description available",
     "views": 0,
     "file_id": "BAACAgUAAxkBAAICj2fjZtCTZ1EFwYj8haDHFpHxN3MZAALSEwACdhwhVxf4NRSppke8NgQ"
+  },
+  "zoom_in": {
+    "title": "zoom_in",
+    "description": "No description available",
+    "views": 0,
+    "file_id": "BAACAgUAAxkBAAIEImfljHbNf_rwhtEovqcMEizMhn8-AAKOFgACPuwwV0vbGOXu1SI7NgQ"
+  },
+  "finance": {
+    "title": "finance",
+    "description": "No description available",
+    "views": 0,
+    "file_id": "BAACAgUAAxkBAAIEKWfljMuvNCL_NaS19NQBjSEOZx2TAAKPFgACPuwwVzI8zOM2QbZGNgQ"
   }
 }
