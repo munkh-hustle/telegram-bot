@@ -589,15 +589,17 @@ async def button(update: Update, context: CallbackContext) -> None:
             video_name = query.data[6:]
             if video_name in video_db:
                 user = query.from_user
-                success = await send_video_with_limit_check(update, context, user, video_name)
-                if not success:
-                    try:
+                try:
+                    success = await send_video_with_limit_check(update, context, user, video_name)
+
+                    if not success:
                         await query.edit_message_text(text="You've reached the video limit.")
-                    except:
-                        await context.bot.send_message(
-                            chat_id=user.id,
-                            text="You've reached the video limit."
-                        )
+                except Exception as e:
+                    logger.error(f"Error sending video: {e}")
+                    await context.bot.send_message(
+                        chat_id=user.id,
+                        text="An error occurred while processing your request."
+                    )
                 
 
         elif query.data.startswith('unblock_'):
@@ -608,8 +610,6 @@ async def button(update: Update, context: CallbackContext) -> None:
                 if str(user_id) in blocked_users:
                     user_data = blocked_users.pop(str(user_id))
                     save_blocked_users(blocked_users)
-
-                    # Reset their video count
                     reset_user_video_count(user_id)
                     
                     try:
@@ -617,7 +617,8 @@ async def button(update: Update, context: CallbackContext) -> None:
                             text=f"✅ User {user_data.get('first_name', 'Unknown')} "
                                  f"(ID: {user_id}) has been unblocked."
                         )
-                    except:
+                    except Exception as e:
+                        logger.error(f"Error editing message: {e}")
                         await context.bot.send_message(
                             chat_id=ADMIN_ID,
                             text=f"✅ User {user_data.get('first_name', 'Unknown')} "
@@ -625,14 +626,13 @@ async def button(update: Update, context: CallbackContext) -> None:
                         )
                     
                     # Notify the unblocked user
-                    await context.bot.send_message(
-                        chat_id=user_id,
-                        text="🎉 You've been unblocked by admin! Your video count has been reset."
-                    )
-                else:
-                    await query.edit_message_text(
-                        text=f"⚠️ User {user_id} wasn't blocked or couldn't be unblocked."
-                    )
+                    try:
+                        await context.bot.send_message(
+                            chat_id=user_id,
+                            text="🎉 You've been unblocked by admin! Your video count has been reset."
+                        )
+                    except Exception as e:
+                        logger.error(f"Error notifying unblocked user: {e}")
                 
         elif query.data.startswith('keep_blocked_'):
             user_id = int(query.data[12:])
@@ -641,7 +641,8 @@ async def button(update: Update, context: CallbackContext) -> None:
                     await query.edit_message_text(
                         text=f"User (ID: {user_id}) remains blocked."
                     )
-                except:
+                except Exception as e:
+                    logger.error(f"Error editing message: {e}")
                     await context.bot.send_message(
                         chat_id=ADMIN_ID,
                         text=f"User (ID: {user_id}) remains blocked."
@@ -650,9 +651,10 @@ async def button(update: Update, context: CallbackContext) -> None:
     except Exception as e:
         logger.error(f"Error handling button press: {e}")
         try:
-            await query.edit_message_text(
-                text="Sorry, an error occurred while processing your request."
-            )
+            if query.message:
+                await query.edit_message_text(
+                    text="Sorry, an error occurred while processing your request."
+                )
         except:
             if update.effective_user:
                 await context.bot.send_message(
