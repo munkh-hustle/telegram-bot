@@ -242,6 +242,7 @@ async def reset_user(update: Update, context: CallbackContext) -> None:
 
 async def send_video_with_limit_check(update: Update, context: CallbackContext, user, video_name):
     """Handle video sending with limit checks"""
+    # First check if user is blocked
     if is_user_blocked(user.id):
         blocked_users = load_blocked_users()
         user_data = blocked_users.get(str(user.id), {})
@@ -251,6 +252,7 @@ async def send_video_with_limit_check(update: Update, context: CallbackContext, 
             )
             return False
     
+    # Record the activity first
     record_user_activity(
         user.id,
         user.username,
@@ -265,7 +267,6 @@ async def send_video_with_limit_check(update: Update, context: CallbackContext, 
     unique_videos = len({v['video_name'] for v in user_videos})
     
     if unique_videos >= MAX_VIDEOS_BEFORE_BLOCK:
-
         # Send the 5th video first
         await context.bot.send_video(
             chat_id=update.effective_chat.id,
@@ -273,16 +274,15 @@ async def send_video_with_limit_check(update: Update, context: CallbackContext, 
             protect_content=True,
             caption=f"Here's your requested video: {video_name}"
         )
+        log_sent_video(user.id, video_name)
 
-        log_sent_video(user.id, video_name)  # Log the successful send
-
-        # Then block them
+        # Then block them and send limit message
         block_user(user.id, user.username, user.first_name)
-        await notify_admin_limit_reached(context, user)
         await update.message.reply_text(
-            "You've reached the 5 video limit. An admin will review your account. "
+            "⚠️ You've reached the 5 video limit. An admin will review your account. "
             "Please wait for approval to continue."
         )
+        await notify_admin_limit_reached(context, user)
         return False
     
     # Send video if under limit
@@ -292,7 +292,7 @@ async def send_video_with_limit_check(update: Update, context: CallbackContext, 
         protect_content=True,
         caption=f"Here's your requested video: {video_name}"
     )
-    log_sent_video(user.id, video_name)  # Log the successful send
+    log_sent_video(user.id, video_name)
     return True
 
 async def notify_admin_limit_reached(context: CallbackContext, user):
