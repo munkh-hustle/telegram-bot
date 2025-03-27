@@ -1,5 +1,7 @@
-{"timestamp": "2025-03-28T00:28:22.948143", "user_id": 7905267896, "username": null, "first_name": "404", "chat_type": "private", "text": "Hi"}
-{"timestamp": "2025-03-28T00:51:45.615934", "user_id": 7942816218, "username": "muunu03", "first_name": "Solongos", "chat_type": "private", "text": "Hi"}
-{"timestamp": "2025-03-28T00:51:48.788359", "user_id": 7942816218, "username": "muunu03", "first_name": "Solongos", "chat_type": "private", "text": "Ssup"}
-{"timestamp": "2025-03-28T00:52:26.166029", "user_id": 7905267896, "username": null, "first_name": "404", "chat_type": "private", "text": "Lol"}
-{"timestamp": "2025-03-28T00:57:18.982977", "user_id": 7942816218, "username": "muunu03", "first_name": "Solongos", "chat_type": "private", "text": "Lol"}
+[
+    {"timestamp": "2025-03-28T00:28:22.948143", "user_id": 7905267896, "username": null, "first_name": "404", "chat_type": "private", "text": "Hi"},
+    {"timestamp": "2025-03-28T00:51:45.615934", "user_id": 7942816218, "username": "muunu03", "first_name": "Solongos", "chat_type": "private", "text": "Hi"},
+    {"timestamp": "2025-03-28T00:51:48.788359", "user_id": 7942816218, "username": "muunu03", "first_name": "Solongos", "chat_type": "private", "text": "Ssup"},
+    {"timestamp": "2025-03-28T00:52:26.166029", "user_id": 7905267896, "username": null, "first_name": "404", "chat_type": "private", "text": "Lol"},
+    {"timestamp": "2025-03-28T00:57:18.982977", "user_id": 7942816218, "username": "muunu03", "first_name": "Solongos", "chat_type": "private", "text": "Lol"}
+]

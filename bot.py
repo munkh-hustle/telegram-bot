@@ -25,6 +25,9 @@ ADMIN_ID = 7905267896
 # User activity log file
 USER_ACTIVITY_FILE = 'user_activity.json'
 
+BLOCKED_USERS_FILE = 'blocked_users.json'
+MAX_VIDEOS_BEFORE_BLOCK = 5
+
 # Directory to store videos
 VIDEO_DIR = 'videos'
 if not os.path.exists(VIDEO_DIR):
@@ -60,6 +63,45 @@ def save_user_activity(activity_data):
     """Save user activity data to file"""
     with open(USER_ACTIVITY_FILE, 'w', encoding='utf-8') as f:
         json.dump(activity_data, f, indent=2)
+
+def load_blocked_users():
+    """Load blocked users from JSON file"""
+    try:
+        with open(BLOCKED_USERS_FILE, 'r', encoding='utf-8') as f:
+            return json.load(f)
+    except (FileNotFoundError, json.JSONDecodeError):
+        return {}
+
+def save_blocked_users(blocked_users):
+    """Save blocked users to JSON file"""
+    with open(BLOCKED_USERS_FILE, 'w', encoding='utf-8') as f:
+        json.dump(blocked_users, f, indent=2)
+
+def is_user_blocked(user_id):
+    """Check if user is blocked"""
+    blocked_users = load_blocked_users()
+    return str(user_id) in blocked_users
+
+def block_user(user_id, username, first_name):
+    """Block a user from receiving more videos"""
+    blocked_users = load_blocked_users()
+    blocked_users[str(user_id)] = {
+        'username': username,
+        'first_name': first_name,
+        'blocked_at': datetime.now().isoformat(),
+        'unblocked': False
+    }
+    save_blocked_users(blocked_users)
+
+def unblock_user(user_id):
+    """Unblock a user"""
+    blocked_users = load_blocked_users()
+    if str(user_id) in blocked_users:
+        blocked_users[str(user_id)]['unblocked'] = True
+        blocked_users[str(user_id)]['unblocked_at'] = datetime.now().isoformat()
+        save_blocked_users(blocked_users)
+        return True
+    return False
 
 def record_user_activity(user_id, username, first_name, last_name, video_name):
     """Record that a video was sent to a user"""
@@ -131,18 +173,84 @@ def log_user_message(user_id, username, first_name, text, chat_type):
         'username': username,
         'first_name': first_name,
         'chat_type': chat_type,
-        'text': text  # Actual message content
+        'text': text
     }
     
     try:
-        # Create directory if it doesn't exist
         os.makedirs('logs', exist_ok=True)
-        log_file = os.path.join('logs', 'message_logs.json')
-
-        with open(log_file, 'a', encoding='utf-8') as f:
-            f.write(json.dumps(log_entry, ensure_ascii=False) + '\n')
+        with open('logs/message_logs.json', 'a', encoding='utf-8') as f:
+            f.write(json.dumps(log_entry))  # No comma here
+            f.write('\n')  # Ensure each entry is on a new line
     except Exception as e:
         logger.error(f"Failed to log message: {e}")
+
+async def send_video_with_limit_check(update: Update, context: CallbackContext, user, video_name):
+    """Handle video sending with limit checks"""
+    if is_user_blocked(user.id):
+        blocked_users = load_blocked_users()
+        user_data = blocked_users.get(str(user.id), {})
+        if user_data.get('unblocked'):
+            # Reset their count after unblock
+            activity_data = load_user_activity()
+            if str(user.id) in activity_data:
+                activity_data[str(user.id)]['videos'] = []
+                save_user_activity(activity_data)
+            await update.message.reply_text(
+                "You've been unblocked! You can now request videos again. "
+                "Remember the 5 video limit."
+            )
+            unblock_user(user.id)  # Remove from blocked list
+        else:
+            await update.message.reply_text(
+                "You've reached the 5 video limit. Please wait for admin approval."
+            )
+            return False
+    
+    record_user_activity(
+        user.id,
+        user.username,
+        user.first_name,
+        user.last_name,
+        video_name
+    )
+    
+    # Check if user reached limit
+    activity_data = load_user_activity()
+    user_videos = activity_data.get(str(user.id), {}).get('videos', [])
+    unique_videos = len({v['video_name'] for v in user_videos})
+    
+    if unique_videos >= MAX_VIDEOS_BEFORE_BLOCK:
+        block_user(user.id, user.username, user.first_name)
+        await notify_admin_limit_reached(context, user)
+        await update.message.reply_text(
+            "You've reached the 5 video limit. An admin will review your account. "
+            "Please wait for approval to continue."
+        )
+        return False
+    
+    await context.bot.send_video(
+        chat_id=update.effective_chat.id,
+        video=video_db[video_name],
+        protect_content=True,
+        caption=f"Here's your requested video: {video_name}"
+    )
+    return True
+
+async def notify_admin_limit_reached(context: CallbackContext, user):
+    """Notify admin when a user reaches the limit"""
+    keyboard = [
+        [InlineKeyboardButton("✅ Unblock User", callback_data=f"unblock_{user.id}")],
+        [InlineKeyboardButton("❌ Keep Blocked", callback_data=f"keep_blocked_{user.id}")]
+    ]
+    reply_markup = InlineKeyboardMarkup(keyboard)
+    
+    await context.bot.send_message(
+        chat_id=ADMIN_ID,
+        text=f"🚨 User @{user.username or user.first_name} (ID: {user.id}) "
+             f"has reached the 5 video limit.\n\n"
+             f"Please check if they've donated and approve/deny access.",
+        reply_markup=reply_markup
+    )
 
 async def handle_message(update: Update, context: CallbackContext) -> None:
     """Log all user messages"""
@@ -162,33 +270,42 @@ async def handle_message(update: Update, context: CallbackContext) -> None:
 async def start(update: Update, context: CallbackContext) -> None:
     """Handle /start command with video requests"""
     user = update.effective_user
-    video_name = None  # Initialize variable outside the if block
+    video_name = None 
     
-    # Check if this is a video request
     if context.args and context.args[0].startswith('video_'):
-        video_name = context.args[0][6:]  # Remove 'video_' prefix
+        video_name = context.args[0][6:]
         if video_name in video_db:
             await update.message.reply_text("Sending your video...")
-            record_user_activity(
-                user.id, 
-                user.username, 
-                user.first_name, 
-                user.last_name,
-                video_name
-            )
-
-            await context.bot.send_video(
-                chat_id=update.effective_chat.id,
-                video=video_db[video_name],
-                protect_content=True,
-                caption=f"Here's your requested video: {video_name}"
-            )
-            return
+            success = await send_video_with_limit_check(update, context, user, video_name)
+            if not success:
+                return
+            
     if video_name is not None:  # Only show this if we were actually looking for a video
         await update.message.reply_text(f"Video '{video_name}' not found. Available videos: /list")
     else:
         await update.message.reply_text(f'Hi {user.first_name}! Use /list to see available videos.')
+
+async def blocked_users(update: Update, context: CallbackContext) -> None:
+    """Show list of blocked users (admin only)"""
+    if not is_admin(update):
+        await update.message.reply_text("You don't have permission to use this command.")
+        return
     
+    blocked_users = load_blocked_users()
+    if not blocked_users:
+        await update.message.reply_text("No users are currently blocked.")
+        return
+    
+    message = ["🚫 Blocked Users:"]
+    for user_id, data in blocked_users.items():
+        message.append(
+            f"\n👤 {data.get('first_name', 'Unknown')} "
+            f"(ID: {user_id}) - @{data.get('username', 'no_username')}\n"
+            f"Blocked at: {data.get('blocked_at')}\n"
+            f"Status: {'Unblocked' if data.get('unblocked') else 'Blocked'}"
+        )
+    
+    await update.message.reply_text('\n'.join(message))
 
 async def help_command(update: Update, context: CallbackContext) -> None:
     """Send a message when the command /help is issued."""
@@ -330,22 +447,34 @@ async def button(update: Update, context: CallbackContext) -> None:
             video_name = query.data[6:]
             if video_name in video_db:
                 user = query.from_user
-                record_user_activity(
-                    user.id, 
-                    user.username, 
-                    user.first_name, 
-                    user.last_name,
-                    video_name
+                success = await send_video_with_limit_check(update, context, user, video_name)
+                if not success:
+                    await query.edit_message_text(text="You've reached the video limit.")
+
+        elif query.data.startswith('unblock_'):
+            user_id = int(query.data[8:])
+            if is_admin(update):
+                unblock_user(user_id)
+                blocked_users = load_blocked_users()
+                user_data = blocked_users.get(str(user_id), {})
+                await query.edit_message_text(
+                    text=f"User {user_data.get('first_name', 'Unknown')} "
+                         f"(ID: {user_id}) has been unblocked."
+                )
+                # Notify the user
+                await context.bot.send_message(
+                    chat_id=user_id,
+                    text="🎉 You've been unblocked! You can now request videos again. "
+                         "Remember the 5 video limit."
+                )
+                
+        elif query.data.startswith('keep_blocked_'):
+            user_id = int(query.data[12:])
+            if is_admin(update):
+                await query.edit_message_text(
+                    text=f"User (ID: {user_id}) remains blocked."
                 )
 
-                await context.bot.send_video(
-                    chat_id=query.message.chat_id,
-                    video=video_db[video_name],
-                    protect_content=True,
-                    caption=video_name
-                )
-            else:
-                await query.edit_message_text(text=f"Video '{video_name}' not found.")
     except Exception as e:
         logger.error(f"Error handling button press: {e}")
         await query.edit_message_text(
@@ -508,6 +637,7 @@ def main() -> None:
     application.add_handler(CommandHandler("delete", delete))
     application.add_handler(CommandHandler("list", list_videos))
     application.add_handler(CommandHandler("stats", user_stats))
+    application.add_handler(CommandHandler("blocked", blocked_users))
     
     # Handle button presses
     application.add_handler(CallbackQueryHandler(button))
