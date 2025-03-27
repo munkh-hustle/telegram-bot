@@ -2,6 +2,7 @@ import os
 import logging
 import json
 from datetime import datetime
+from dotenv import load_dotenv
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import (
     Application,
@@ -334,11 +335,17 @@ async def error_handler(update: Update, context: CallbackContext) -> None:
 def main() -> None:
     """Start the bot."""
     # Load and sync video database at startup
+    load_dotenv()
     load_video_db()
     sync_video_data()
+
+    TOKEN = os.getenv('TELEGRAM_BOT_TOKEN')
+    if not TOKEN:
+        logger.error("Telegram bot token not found in environment variables")
+        return
     
     # Create the Application and pass it your bot's token.
-    application = Application.builder().token("7641317425:AAHfWDG6uHQZeG8BQ5JvuvjMFvLFgrqbh9Q").build()
+    application = Application.builder().token(TOKEN).build()
 
     # on different commands - answer in Telegram
     application.add_handler(CommandHandler("sync", sync))  # Add this line
