@@ -190,7 +190,7 @@
         function displayVideos(videoList) {
             const container = document.getElementById('video-container');
             const errorDiv = document.getElementById('error-message');
-            
+                
             if (!videoList || videoList.length === 0) {
                 container.innerHTML = '<div class="loading">No videos found</div>';
                 return;
@@ -208,8 +208,8 @@
                 const videoCard = document.createElement('div');
                 videoCard.className = 'video-card';
                 videoCard.innerHTML = `
-                    <div class="video-thumbnail" style="background-image: url('${video.thumbnail}')">
-                        ${video.views ? `<div class="video-views-badge">👁️ ${video.views}</div>` : ''}
+                    <div class="video-thumbnail" style="background-image: url('${video.thumbnail || ''}')">
+                        ${video.views ? `<div class="video-views">👁️ ${video.views}</div>` : ''}
                     </div>
                     <div class="video-info">
                         <div class="video-title">${video.title}</div>
