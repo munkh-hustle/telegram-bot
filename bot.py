@@ -211,13 +211,16 @@ async def rename(update: Update, context: CallbackContext) -> None:
     new_name = context.args[-1]
     
     if old_name in video_db:
+        # Update video_db
         video_db[new_name] = video_db.pop(old_name)
         save_video_db()  # Save to JSON file
 
-        # Also update video_data.json
+        # Update video_data
         video_data = load_video_data()
         if old_name in video_data:
             video_data[new_name] = video_data.pop(old_name)
+            if video_data[new_name]['title'] == old_name:
+                video_data[new_name]['title'] = new_name
             with open('video_data.json', 'w') as f:
                 json.dump(video_data, f, indent=2)
         await update.message.reply_text(f"Video renamed from '{old_name}' to '{new_name}'")
