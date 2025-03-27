@@ -134,7 +134,14 @@ async def start(update: Update, context: CallbackContext) -> None:
         video_name = context.args[0][6:]  # Remove 'video_' prefix
         if video_name in video_db:
             await update.message.reply_text("Sending your video...")
-            record_user_activity(user.id, user.username, video_name)
+            record_user_activity(
+                user.id, 
+                user.username, 
+                user.first_name, 
+                user.last_name,
+                video_name
+            )
+
             await context.bot.send_video(
                 chat_id=update.effective_chat.id,
                 video=video_db[video_name],
