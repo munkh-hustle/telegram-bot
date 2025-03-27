@@ -61,22 +61,23 @@ def save_user_activity(activity_data):
     with open(USER_ACTIVITY_FILE, 'w', encoding='utf-8') as f:
         json.dump(activity_data, f, indent=2)
 
-def record_user_activity(user_id, username, video_name):
+def record_user_activity(user_id, username, first_name, last_name, video_name):
     """Record that a video was sent to a user"""
     activity_data = load_user_activity()
-    
     user_id_str = str(user_id)
-    timestamp = datetime.now().isoformat()
     
     if user_id_str not in activity_data:
         activity_data[user_id_str] = {
             'username': username,
+            'username': username,
+            'first_name': first_name,
+            'last_name': last_name,
             'videos': []
         }
     
     activity_data[user_id_str]['videos'].append({
         'video_name': video_name,
-        'timestamp': timestamp
+        'timestamp': datetime.now().isoformat()
     })
     
     save_user_activity(activity_data)
@@ -287,7 +288,13 @@ async def button(update: Update, context: CallbackContext) -> None:
             video_name = query.data[6:]
             if video_name in video_db:
                 user = query.from_user
-                record_user_activity(user.id, user.username, video_name)
+                record_user_activity(
+                    user.id, 
+                    user.username, 
+                    user.first_name, 
+                    user.last_name,
+                    video_name
+                )
 
                 await context.bot.send_video(
                     chat_id=query.message.chat_id,
