@@ -244,13 +244,16 @@ async def notify_admin_limit_reached(context: CallbackContext, user):
     ]
     reply_markup = InlineKeyboardMarkup(keyboard)
     
-    await context.bot.send_message(
-        chat_id=ADMIN_ID,
-        text=f"🚨 User @{user.username or user.first_name} (ID: {user.id}) "
-             f"has reached the 5 video limit.\n\n"
-             f"Please check if they've donated and approve/deny access.",
-        reply_markup=reply_markup
-    )
+    try:
+        await context.bot.send_message(
+            chat_id=ADMIN_ID,
+            text=f"🚨 User @{user.username or user.first_name} (ID: {user.id}) "
+                 f"has reached the 5 video limit.\n\n"
+                 f"Please check if they've donated and approve/deny access.",
+            reply_markup=reply_markup
+        )
+    except Exception as e:
+        logger.error(f"Failed to notify admin: {e}")
 
 async def handle_message(update: Update, context: CallbackContext) -> None:
     """Log all user messages"""
@@ -440,16 +443,24 @@ async def list_videos(update: Update, context: CallbackContext) -> None:
 async def button(update: Update, context: CallbackContext) -> None:
     """Handle button presses"""
     query = update.callback_query
-    await query.answer()
-    
+
     try:
+        await query.answer()
+
         if query.data.startswith('video_'):
             video_name = query.data[6:]
             if video_name in video_db:
                 user = query.from_user
                 success = await send_video_with_limit_check(update, context, user, video_name)
                 if not success:
-                    await query.edit_message_text(text="You've reached the video limit.")
+                    try:
+                        await query.edit_message_text(text="You've reached the video limit.")
+                    except:
+                        await context.bot.send_message(
+                            chat_id=user.id,
+                            text="You've reached the video limit."
+                        )
+                
 
         elif query.data.startswith('unblock_'):
             user_id = int(query.data[8:])
@@ -457,10 +468,18 @@ async def button(update: Update, context: CallbackContext) -> None:
                 unblock_user(user_id)
                 blocked_users = load_blocked_users()
                 user_data = blocked_users.get(str(user_id), {})
-                await query.edit_message_text(
-                    text=f"User {user_data.get('first_name', 'Unknown')} "
-                         f"(ID: {user_id}) has been unblocked."
-                )
+
+                try:
+                    await query.edit_message_text(
+                        text=f"User {user_data.get('first_name', 'Unknown')} "
+                             f"(ID: {user_id}) has been unblocked."
+                    )
+                except:
+                    await context.bot.send_message(
+                        chat_id=ADMIN_ID,
+                        text=f"User {user_data.get('first_name', 'Unknown')} "
+                             f"(ID: {user_id}) has been unblocked."
+                    )
                 # Notify the user
                 await context.bot.send_message(
                     chat_id=user_id,
@@ -471,15 +490,28 @@ async def button(update: Update, context: CallbackContext) -> None:
         elif query.data.startswith('keep_blocked_'):
             user_id = int(query.data[12:])
             if is_admin(update):
-                await query.edit_message_text(
-                    text=f"User (ID: {user_id}) remains blocked."
-                )
+                try:
+                    await query.edit_message_text(
+                        text=f"User (ID: {user_id}) remains blocked."
+                    )
+                except:
+                    await context.bot.send_message(
+                        chat_id=ADMIN_ID,
+                        text=f"User (ID: {user_id}) remains blocked."
+                    )
 
     except Exception as e:
         logger.error(f"Error handling button press: {e}")
-        await query.edit_message_text(
-            text="Sorry, an error occurred while processing your request."
-        )
+        try:
+            await query.edit_message_text(
+                text="Sorry, an error occurred while processing your request."
+            )
+        except:
+            if update.effective_user:
+                await context.bot.send_message(
+                    chat_id=update.effective_user.id,
+                    text="Sorry, an error occurred while processing your request."
+                )
 
 async def search_user_messages(update: Update, context: CallbackContext, search_term: str) -> None:
     """Search through user messages for specific text"""
