@@ -43,7 +43,7 @@ def load_video_db():
 
 def save_video_db():
     """Save video database to JSON file"""
-    with open('video_db.json', 'w') as f:
+    with open('video_db.json', 'w', encoding='utf-8') as f:
         json.dump(video_db, f, indent=2)
 
 load_video_db()
@@ -58,7 +58,7 @@ def load_user_activity():
     
 def save_user_activity(activity_data):
     """Save user activity data to file"""
-    with open(USER_ACTIVITY_FILE, 'w') as f:
+    with open(USER_ACTIVITY_FILE, 'w', encoding='utf-8') as f:
         json.dump(activity_data, f, indent=2)
 
 def record_user_activity(user_id, username, video_name):
