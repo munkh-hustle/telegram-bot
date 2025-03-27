@@ -355,27 +355,64 @@ async def button(update: Update, context: CallbackContext) -> None:
 async def search_user_messages(update: Update, context: CallbackContext, search_term: str) -> None:
     """Search through user messages for specific text"""
     try:
-        if not os.path.exists('message_logs.json'):
+        # Parse user filter syntax: "user:1234" or "user:@username"
+        user_filter = None
+        actual_search_term = search_term
+
+        # Check for user: prefix
+        if 'user:' in search_term.lower():
+            parts = search_term.split('user:', 1)
+            user_part = parts[1].split()[0]  # Get the user specifier
+            actual_search_term = ' '.join(parts[1].split()[1:]) if len(parts[1].split()) > 1 else ''
+
+            # Check if user is ID or username
+            if user_part.startswith('@'):
+                user_filter = {'username': user_part[1:].lower()}
+            else:
+                try:
+                    user_filter = {'user_id': int(user_part)}
+                except ValueError:
+                    await update.message.reply_text("Invalid user ID. Use @username or numeric ID")
+                    return
+            
+        if not actual_search_term and not user_filter:
+            await update.message.reply_text("Please provide a search term or user filter")
+            return
+
+        if not os.path.exists('logs/message_logs.json'):
             await update.message.reply_text("No message logs available yet.")
             return
         
-        with open('message_logs.json', 'r', encoding='utf-8') as f:
+        with open('logs/message_logs.json', 'r', encoding='utf-8') as f:
             # Read all lines as individual JSON objects
             messages = [json.loads(line) for line in f if line.strip()]
         
         # Filter messages containing the search term (case insensitive)
-        results = [
-            msg for msg in messages 
-            if search_term.lower() in msg.get('text', '').lower()
-        ]
+        results = []
+        for msg in messages:
+            # Apply user filter if specified
+            if user_filter:
+                if 'user_id' in user_filter and msg.get('user_id') != user_filter['user_id']:
+                    continue
+                if 'username' in user_filter and msg.get('username', '').lower() != user_filter['username']:
+                    continue
+            
+            # Apply simple text search
+            if actual_search_term and actual_search_term.lower() not in msg.get('text', '').lower():
+                continue
+            
+            results.append(msg)
         
         if not results:
-            await update.message.reply_text(f"No messages found containing: {search_term}")
+            await update.message.reply_text(f"No messages found containing:")
             return
         
         # Format results with pagination
-        response = [f"🔍 Search results for '{search_term}':\n"]
-        for i, msg in enumerate(results[:10], 1):  # Show first 10 results
+        response = [f"🔍 Search results for:\n"]
+        if user_filter:
+            response[0] += f"👤 Filtered by user: {user_filter}\n"
+
+        for i, msg in enumerate(results[:15], 1):  # Show first 15 results
             timestamp = datetime.fromisoformat(msg['timestamp']).strftime('%Y-%m-%d %H:%M')
             response.append(
                 f"\n{i}. {timestamp} - @{msg.get('username', '?')} "
@@ -383,8 +420,8 @@ async def search_user_messages(update: Update, context: CallbackContext, search_
                 f"{msg['text']}"
             )
         
-        if len(results) > 10:
-            response.append(f"\n\nℹ️ Showing 10 of {len(results)} results. Refine your search for better results.")
+        if len(results) > 15:
+            response.append(f"\n\nℹ️ Showing 10 of {len(results)} results.")
         
         # Split long messages to avoid Telegram's message length limit
         full_response = '\n'.join(response)
