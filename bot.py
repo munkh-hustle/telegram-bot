@@ -137,6 +137,7 @@ async def start(update: Update, context: CallbackContext) -> None:
             await context.bot.send_video(
                 chat_id=update.effective_chat.id,
                 video=video_db[video_name],
+                protect_content=True,
                 caption=f"Here's your requested video: {video_name}"
             )
             return
@@ -291,6 +292,7 @@ async def button(update: Update, context: CallbackContext) -> None:
                 await context.bot.send_video(
                     chat_id=query.message.chat_id,
                     video=video_db[video_name],
+                    protect_content=True,
                     caption=video_name
                 )
             else:
