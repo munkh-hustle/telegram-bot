@@ -290,8 +290,8 @@ async def handle_screenshot(update: Update, context: CallbackContext) -> None:
     """Handle payment screenshot submissions"""
     user = update.effective_user
     
-    # Check if user is blocked, but allow photo submissions
-    if is_user_blocked(user.id, allow_photos=False):  # Changed this line
+    # Check if user is blocked, but allow photo submissions for payment verification
+    if is_user_blocked(user.id) and not update.message.caption and not update.message.caption.startswith("Payment"):
         await context.bot.send_message(
             chat_id=update.effective_chat.id,
             text="⛔ Your account is blocked. Please wait for admin approval."
@@ -324,10 +324,18 @@ async def handle_screenshot(update: Update, context: CallbackContext) -> None:
         ]
         reply_markup = InlineKeyboardMarkup(keyboard)
         
+        # Check if this is coming from a blocked user
+        if is_user_blocked(user.id):
+            caption = (f"🚨 Payment verification from blocked user:\n"
+                      f"@{user.username or user.first_name} (ID: {user.id})\n"
+                      f"This user has reached the video limit.")
+        else:
+            caption = f"🆕 Payment screenshot from @{user.username or user.first_name} (ID: {user.id})"
+        
         await context.bot.send_photo(
             chat_id=ADMIN_ID,
             photo=update.message.photo[-1].file_id,
-            caption=f"🆕 Payment screenshot from @{user.username or user.first_name} (ID: {user.id})",
+            caption=caption,
             reply_markup=reply_markup
         )
 
@@ -434,7 +442,10 @@ async def notify_admin_limit_reached(context: CallbackContext, user):
             chat_id=ADMIN_ID,
             text=f"🚨 User @{user.username or user.first_name} (ID: {user.id}) "
                  f"has reached the 5 video limit.\n\n"
-                 f"Please check if they've donated and approve/deny access.",
+                 f"Please wait for their payment screenshot or manually verify.\n"
+                 f"Username: @{user.username}\n"
+                 f"First Name: {user.first_name}\n"
+                 f"User ID: {user.id}",
             reply_markup=reply_markup
         )
     except Exception as e:
@@ -1039,11 +1050,8 @@ def main() -> None:
     # on non command i.e video messages
     application.add_handler(MessageHandler(filters.VIDEO, handle_video))
     application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
-    application.add_handler(MessageHandler(filters.PHOTO, handle_screenshot))
     application.add_handler(MessageHandler(filters.PHOTO & ~filters.COMMAND, handle_screenshot))
 
-
-    
     application.add_error_handler(error_handler)
 
     # Start the Bot
