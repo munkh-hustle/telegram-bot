@@ -1,7 +1,10 @@
 import os
 import logging
 import json
+import pytesseract
+from PIL import Image
 from datetime import datetime
+from telegram import InputMediaPhoto
 from dotenv import load_dotenv
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import (
@@ -220,6 +223,178 @@ def log_sent_video(user_id, video_name):
             f.write('\n')
     except Exception as e:
         logger.error(f"Failed to log video delivery: {e}")
+
+def update_payment_status(user_id, status):
+    """Update payment status in the database"""
+    try:
+        with open('payment_submissions.json', 'r+', encoding='utf-8') as f:
+            data = json.load(f)
+            
+        # Find most recent submission from this user
+        for submission in reversed(data):
+            if submission['user_id'] == user_id:
+                submission['status'] = status
+                submission['processed_at'] = datetime.now().isoformat()
+                break
+                
+        with open('payment_submissions.json', 'w', encoding='utf-8') as f:
+            json.dump(data, f, indent=2)
+            
+    except Exception as e:
+        logger.error(f"Error updating payment status: {e}")
+
+def save_payment_submission(payment_data):
+    """Save payment submission to JSON file"""
+    try:
+        with open('payment_submissions.json', 'r+', encoding='utf-8') as f:
+            try:
+                data = json.load(f)
+            except json.JSONDecodeError:
+                data = []
+    except FileNotFoundError:
+        data = []
+    
+    data.append(payment_data)
+    
+    with open('payment_submissions.json', 'w', encoding='utf-8') as f:
+        json.dump(data, f, indent=2)
+
+async def validate_screenshot(file_path, user_id):
+    """Basic automatic validation using OCR"""
+    try:
+        # Extract text from image
+        image = Image.open(file_path)
+        text = pytesseract.image_to_string(image)
+
+        # Check for required user ID in the text
+        if str(user_id) not in text:
+            return False, "User ID not found in screenshot"
+        
+        # Check for common payment indicators
+        indicators = [
+            "transfer", "payment", "sent", "transaction", 
+            "completed", "success", "хандив", "шилжүүлэг", 
+            "гүйлгээ", "дугаар", "амжилттай", "дүн"
+        ]
+        
+        # Count matching indicators
+        matches = sum(1 for word in indicators if word.lower() in text.lower())
+
+        # Additional checks for specific banks
+        bank_specific_checks = {
+            "golomt": ["голомт", "golomt", "лавлах дугаар"],
+            "khan": ["хан", "khan", "улдэгдэл", "хулээн авагч"]
+        }
+
+        # Determine which bank and check its specific requirements
+        bank = None
+        for bank_name, keywords in bank_specific_checks.items():
+            if any(keyword.lower() in text.lower() for keyword in keywords):
+                bank = bank_name
+                break
+        
+        if not bank:
+            return False, "Could not identify bank from screenshot"
+        
+        # Bank-specific validation
+        if bank == "golomt":
+            if not ("шилжүүлэгчийн" in text.lower() and "хүлээн авагчийн" in text.lower()):
+                return False, "Missing required Golomt bank fields"
+                
+        elif bank == "khan":
+            if not ("дансны улдэгдэл" in text.lower() and "гүйлгээний утга" in text.lower()):
+                return False, "Missing required Khan bank fields"
+        
+        # If we find enough indicators and user ID, consider it valid
+        if matches >= 3:
+            return True, "Validation successful"
+        else:
+            return False, f"Only found {matches} payment indicators (need at least 3)"
+        
+    except Exception as e:
+        logger.error(f"Error validating screenshot: {e}")
+        return False, f"Validation error: {str(e)}"
+    
+async def notify_admin_payment_submission(context: CallbackContext, user, file_path):
+    """Notify admin about new payment submission"""
+    keyboard = [
+        [InlineKeyboardButton("✅ Approve", callback_data=f"approve_{user.id}")],
+        [InlineKeyboardButton("❌ Reject", callback_data=f"reject_{user.id}")]
+    ]
+    reply_markup = InlineKeyboardMarkup(keyboard)
+    
+    try:
+        with open(file_path, 'rb') as photo:
+            await context.bot.send_photo(
+                chat_id=ADMIN_ID,
+                photo=photo,
+                caption=f"🆕 Payment from @{user.username or user.first_name} (ID: {user.id})",
+                reply_markup=reply_markup
+            )
+    except Exception as e:
+        logger.error(f"Error sending payment notification: {e}")
+
+async def handle_screenshot(update: Update, context: CallbackContext) -> None:
+    """Handle payment screenshot submissions"""
+    user = update.effective_user
+    
+    if is_user_blocked(user.id):
+        await context.bot.send_message(
+            chat_id=update.effective_chat.id,
+            text="⛔ Your account is blocked. Please wait for admin approval."
+        )
+        return
+    
+    # Save the screenshot
+    photo_file = await update.message.photo[-1].get_file()
+    file_path = f"payments/{user.id}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.jpg"
+    await photo_file.download_to_drive(file_path)
+
+    # Validate the screenshot
+    is_valid, validation_msg = await validate_screenshot(file_path, user.id)
+    
+    if not is_valid:
+        # Delete invalid screenshot
+        try:
+            os.remove(file_path)
+        except:
+            pass
+            
+        await update.message.reply_text(
+            f"❌ Payment verification failed:\n{validation_msg}\n\n"
+            "Please include your User ID in the transfer note/message and send a clear screenshot "
+            "that shows:\n"
+            "- Transfer amount\n"
+            "- Date/time\n"
+            "- Sender/receiver info\n"
+            "- Transaction status\n\n"
+            f"Your User ID: {user.id}"
+        )
+        return
+
+    # Record the submission
+    payment_data = {
+        'user_id': user.id,
+        'username': user.username,
+        'first_name': user.first_name,
+        'timestamp': datetime.now().isoformat(),
+        'status': 'pending',
+        'file_path': file_path,
+        'auto_validated': True,
+        'validation_msg': validation_msg
+    }
+    
+    save_payment_submission(payment_data)
+    
+    # Notify user
+    await update.message.reply_text(
+        "✅ Payment screenshot received and preliminarily verified!\n"
+        "We'll complete manual verification shortly.\n\n"
+        f"Your User ID: {user.id}"
+    )
+    
+    # Notify admin
+    await notify_admin_payment_submission(context, user, file_path)
 
 async def reset_user(update: Update, context: CallbackContext) -> None:
     """Reset a user's video count (admin only)"""
@@ -649,6 +824,43 @@ async def button(update: Update, context: CallbackContext) -> None:
                         chat_id=ADMIN_ID,
                         text=f"User (ID: {user_id}) remains blocked."
                     )
+        elif query.data.startswith('approve_'):
+            user_id = int(query.data[8:])
+            if is_admin(update):
+                # Update payment status
+                update_payment_status(user_id, 'approved')
+
+                # Unblock user
+                unblock_user(user_id)
+                reset_user_video_count(user_id)
+
+                # Notify user
+                await context.bot.send_message(
+                    chat_id=user_id,
+                    text="🎉 Your payment has been verified! You can now request videos again."
+                )
+
+                # Update admin message
+                await query.edit_message_text(
+                    text=f"✅ Payment from user ID {user_id} approved."
+                )
+
+        elif query.data.startswith('reject_'):
+            user_id = int(query.data[7:])
+            if is_admin(update):
+                # Update payment status
+                update_payment_status(user_id, 'rejected')
+
+                # Notify user
+                await context.bot.send_message(
+                    chat_id=user_id,
+                    text="❌ Your payment couldn't be verified. Please send a clear screenshot of your transaction."
+                )
+
+                # Update admin message
+                await query.edit_message_text(
+                    text=f"❌ Payment from user ID {user_id} rejected."
+                )
 
     except Exception as e:
         logger.error(f"Error handling button press: {e}")
@@ -824,6 +1036,7 @@ def main() -> None:
     application.add_handler(CommandHandler("unblock", unblock_command))
     application.add_handler(CommandHandler("resetuser", reset_user))
     application.add_handler(CommandHandler("videologs", video_logs))
+    application.add_handler(CommandHandler("verifypayment", verify_payment))
 
     
     # Handle button presses
@@ -832,6 +1045,8 @@ def main() -> None:
     # on non command i.e video messages
     application.add_handler(MessageHandler(filters.VIDEO, handle_video))
     application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
+    application.add_handler(MessageHandler(filters.PHOTO, handle_screenshot))
+
     
     application.add_error_handler(error_handler)
 
