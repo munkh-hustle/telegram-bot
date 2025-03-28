@@ -339,96 +339,85 @@ async def handle_screenshot(update: Update, context: CallbackContext) -> None:
     """Handle payment screenshot submissions"""
     user = update.effective_user
     
-    # Get the photo file (highest resolution)
-    photo_file = await update.message.photo[-1].get_file()
-    
-    # Create a temporary file in memory instead of saving to disk
-    with io.BytesIO() as photo_buffer:
-        await photo_file.download_to_memory(out=photo_buffer)
-        photo_buffer.seek(0)  # Rewind the buffer
-        
-        # Validate the screenshot from memory
-        try:
-            image = Image.open(photo_buffer)
-            # Need to rewind after opening
-            photo_buffer.seek(0)
-            
-            # Perform OCR validation
-            text = pytesseract.image_to_string(image)
-            
-            # Check for required user ID in the text
-            if str(user.id) not in text:
-                await update.message.reply_text(
-                    f"❌ Payment verification failed: User ID not found in screenshot\n\n"
-                    f"Your User ID: {user.id}\n"
-                    "Please include this ID in the transfer note/message."
-                )
-                return
-                
-            # Basic payment indicators check (same as before)
-            indicators = [
-                "transfer", "payment", "sent", "transaction", 
-                "completed", "success", "хандив", "шилжүүлэг", 
-                "гүйлгээ", "дугаар", "амжилттай", "дүн"
-            ]
-            matches = sum(1 for word in indicators if word.lower() in text.lower())
-            
-            if matches < 3:
-                await update.message.reply_text(
-                    f"❌ Only found {matches} payment indicators (need at least 3)\n\n"
-                    "Please send a clear screenshot that shows:\n"
-                    "- Transfer amount\n"
-                    "- Date/time\n"
-                    "- Transaction status"
-                )
-                return
-                
-        except Exception as e:
-            logger.error(f"Error validating screenshot: {e}")
-            await update.message.reply_text(
-                "❌ Error processing your screenshot. Please try again."
-            )
-            return
-    
+    # Check if user is blocked first
     if is_user_blocked(user.id):
         await context.bot.send_message(
             chat_id=update.effective_chat.id,
             text="⛔ Your account is blocked. Please wait for admin approval."
         )
         return
+    
+    try:
+        # Get the photo file (highest resolution)
+        photo_file = await update.message.photo[-1].get_file()
+        
+        # Create a temporary file in memory
+        with io.BytesIO() as photo_buffer:
+            await photo_file.download_to_memory(out=photo_buffer)
+            photo_buffer.seek(0)
+            
+            try:
+                # Try OCR validation if Tesseract is available
+                try:
+                    image = Image.open(photo_buffer)
+                    photo_buffer.seek(0)  # Rewind after opening
+                    text = pytesseract.image_to_string(image)
+                    
+                    # Check for user ID in text
+                    if str(user.id) not in text:
+                        await update.message.reply_text(
+                            f"❌ User ID not found in screenshot\n\n"
+                            f"Your User ID: {user.id}\n"
+                            "Please include this ID in the transfer note/message."
+                        )
+                        return
+                except Exception as e:
+                    logger.warning(f"OCR validation skipped: {e}")
+                    # Continue without OCR validation
+            except Exception as e:
+                logger.error(f"Error processing image: {e}")
+                await update.message.reply_text(
+                    "❌ Error processing your screenshot. Please try again."
+                )
+                return
 
-    # Record the submission (without file path)
-    payment_data = {
-        'user_id': user.id,
-        'username': user.username,
-        'first_name': user.first_name,
-        'timestamp': datetime.now().isoformat(),
-        'status': 'pending',
-        'auto_validated': True
-    }
-    
-    save_payment_submission(payment_data)
-    
-    # Notify user
-    await update.message.reply_text(
-        "✅ Payment screenshot received and preliminarily verified!\n"
-        "We'll complete manual verification shortly.\n\n"
-        f"Your User ID: {user.id}"
-    )
-    
-    # Forward to admin with approval buttons (using the original file_id)
-    keyboard = [
-        [InlineKeyboardButton("✅ Approve", callback_data=f"approve_{user.id}")],
-        [InlineKeyboardButton("❌ Reject", callback_data=f"reject_{user.id}")]
-    ]
-    reply_markup = InlineKeyboardMarkup(keyboard)
-    
-    await context.bot.send_photo(
-        chat_id=ADMIN_ID,
-        photo=update.message.photo[-1].file_id,  # Use the original file_id
-        caption=f"🆕 Payment from @{user.username or user.first_name} (ID: {user.id})",
-        reply_markup=reply_markup
-    )
+        # Record the submission
+        payment_data = {
+            'user_id': user.id,
+            'username': user.username,
+            'first_name': user.first_name,
+            'timestamp': datetime.now().isoformat(),
+            'status': 'pending'
+        }
+        
+        save_payment_submission(payment_data)
+        
+        # Notify user
+        await update.message.reply_text(
+            "✅ Payment screenshot received!\n"
+            "We'll verify it shortly.\n\n"
+            f"Your User ID: {user.id}"
+        )
+        
+        # Forward to admin with approval buttons
+        keyboard = [
+            [InlineKeyboardButton("✅ Approve", callback_data=f"approve_{user.id}")],
+            [InlineKeyboardButton("❌ Reject", callback_data=f"reject_{user.id}")]
+        ]
+        reply_markup = InlineKeyboardMarkup(keyboard)
+        
+        await context.bot.send_photo(
+            chat_id=ADMIN_ID,
+            photo=update.message.photo[-1].file_id,
+            caption=f"🆕 Payment from @{user.username or user.first_name} (ID: {user.id})",
+            reply_markup=reply_markup
+        )
+
+    except Exception as e:
+        logger.error(f"Error handling screenshot: {e}")
+        await update.message.reply_text(
+            "❌ Error processing your screenshot. Please try again."
+        )
 
 async def reset_user(update: Update, context: CallbackContext) -> None:
     """Reset a user's video count (admin only)"""
@@ -477,11 +466,10 @@ async def send_video_with_limit_check(update: Update, context: CallbackContext, 
     unique_videos = len({v['video_name'] for v in user_videos})
     
     if unique_videos >= MAX_VIDEOS_BEFORE_BLOCK:
-        # Send the 5th video first
+        # Send the 5th video first (without protect_content)
         await context.bot.send_video(
             chat_id=update.effective_chat.id,
             video=video_db[video_name],
-            protect_content=True,
             caption=f"Here's your requested video: {video_name}"
         )
         log_sent_video(user.id, video_name)
@@ -504,7 +492,7 @@ async def send_video_with_limit_check(update: Update, context: CallbackContext, 
         await notify_admin_limit_reached(context, user)
         return False
     
-    # Send video if under limit
+    # Send video if under limit (with protect_content)
     await context.bot.send_video(
         chat_id=update.effective_chat.id,
         video=video_db[video_name],
