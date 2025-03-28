@@ -338,23 +338,15 @@ async def handle_screenshot(update: Update, context: CallbackContext) -> None:
     """Handle payment screenshot submissions"""
     user = update.effective_user
     
-    if is_user_blocked(user.id):
-        await context.bot.send_message(
-            chat_id=update.effective_chat.id,
-            text="⛔ Your account is blocked. Please wait for admin approval."
-        )
-        return
-    
     # Save the screenshot
     photo_file = await update.message.photo[-1].get_file()
     file_path = f"payments/{user.id}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.jpg"
     await photo_file.download_to_drive(file_path)
 
-    # Validate the screenshot
+    # Validate the screenshot (check this BEFORE blocking status)
     is_valid, validation_msg = await validate_screenshot(file_path, user.id)
     
     if not is_valid:
-        # Delete invalid screenshot
         try:
             os.remove(file_path)
         except:
@@ -364,11 +356,19 @@ async def handle_screenshot(update: Update, context: CallbackContext) -> None:
             f"❌ Payment verification failed:\n{validation_msg}\n\n"
             "Please include your User ID in the transfer note/message and send a clear screenshot "
             "that shows:\n"
-            "- Transfer amount\n"
+            "- Transfer amount (10,000 MNT)\n"
             "- Date/time\n"
             "- Sender/receiver info\n"
-            "- Transaction status\n\n"
+            "- Transaction status\n"
+            "- Your User ID in description\n\n"
             f"Your User ID: {user.id}"
+        )
+        return
+    
+    if is_user_blocked(user.id):
+        await context.bot.send_message(
+            chat_id=update.effective_chat.id,
+            text="⛔ Your account is blocked. Please wait for admin approval."
         )
         return
 
@@ -452,11 +452,19 @@ async def send_video_with_limit_check(update: Update, context: CallbackContext, 
         )
         log_sent_video(user.id, video_name)
 
-        # Then block them and send limit message
+        # Then block them and send payment instructions
         block_user(user.id, user.username, user.first_name)
+        payment_message = (
+            "⚠️ You've reached the 5 video limit.\n\n"
+            "To continue accessing videos, please send 10,000 MNT to:\n"
+            "🏦 Khan Bank: 5926271236\n\n"
+            "Include this in the transaction description:\n"
+            f"UserID:{user.id} 10000\n\n"
+            "After payment, send a screenshot of the transaction here."
+        )
         await context.bot.send_message(
             chat_id=update.effective_chat.id,
-            text="⚠️ You've reached the 5 video limit..."
+            text=payment_message
         )
 
         await notify_admin_limit_reached(context, user)
@@ -1005,6 +1013,51 @@ async def error_handler(update: Update, context: CallbackContext) -> None:
         await update.effective_message.reply_text(
             "Sorry, an error occurred while processing your request."
         )
+async def verify_payment(update: Update, context: CallbackContext) -> None:
+    """Verify a payment manually (admin only)"""
+    if not is_admin(update):
+        await update.message.reply_text("You don't have permission to use this command.")
+        return
+    
+    if not context.args:
+        await update.message.reply_text("Usage: /verifypayment <user_id> <approve/reject>")
+        return
+    
+    if len(context.args) < 2:
+        await update.message.reply_text("Please specify both user_id and action (approve/reject)")
+        return
+    
+    try:
+        user_id = int(context.args[0])
+        action = context.args[1].lower()
+        
+        if action not in ['approve', 'reject']:
+            await update.message.reply_text("Action must be either 'approve' or 'reject'")
+            return
+            
+        # Update payment status
+        update_payment_status(user_id, 'approved' if action == 'approve' else 'rejected')
+        
+        if action == 'approve':
+            # Unblock user if approved
+            unblock_user(user_id)
+            reset_user_video_count(user_id)
+            await update.message.reply_text(f"✅ Payment from user {user_id} approved and user unblocked.")
+            # Notify the user
+            await context.bot.send_message(
+                chat_id=user_id,
+                text="🎉 Your payment has been verified! You can now request videos again."
+            )
+        else:
+            await update.message.reply_text(f"❌ Payment from user {user_id} rejected.")
+            # Notify the user
+            await context.bot.send_message(
+                chat_id=user_id,
+                text="❌ Your payment was rejected. Please contact support if you believe this is an error."
+            )
+            
+    except ValueError:
+        await update.message.reply_text("Invalid user ID. Must be a number.")
 
 def main() -> None:
     """Start the bot."""
