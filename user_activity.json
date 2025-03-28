@@ -3,27 +3,6 @@
     "username": "muunu03",
     "first_name": "Solongos",
     "last_name": "Khel",
-    "videos": [
-      {
-        "video_name": "finance",
-        "timestamp": "2025-03-28T10:37:36.492257"
-      },
-      {
-        "video_name": "zoom_in",
-        "timestamp": "2025-03-28T10:38:57.010322"
-      },
-      {
-        "video_name": "cat",
-        "timestamp": "2025-03-28T10:39:05.782096"
-      },
-      {
-        "video_name": "studio",
-        "timestamp": "2025-03-28T10:39:13.985106"
-      },
-      {
-        "video_name": "pluto-1-2",
-        "timestamp": "2025-03-28T10:39:24.610836"
-      }
-    ]
+    "videos": []
   }
 }
