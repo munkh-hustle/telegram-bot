@@ -291,12 +291,15 @@ async def handle_screenshot(update: Update, context: CallbackContext) -> None:
     user = update.effective_user
     
     # Check if user is blocked, but allow photo submissions for payment verification
-    if is_user_blocked(user.id) and not update.message.caption and not update.message.caption.startswith("Payment"):
-        await context.bot.send_message(
-            chat_id=update.effective_chat.id,
-            text="⛔ Your account is blocked. Please wait for admin approval."
-        )
-        return
+    if is_user_blocked(user.id):
+        # Only block if this isn't a payment screenshot (no caption or caption doesn't indicate payment)
+        caption = update.message.caption or ""
+        if not ("payment" in caption.lower() or "төлбөр" in caption.lower()):  # Check for payment in English/Mongolian
+            await context.bot.send_message(
+                chat_id=update.effective_chat.id,
+                text="⛔ Your account is blocked. Please send your payment screenshot with 'Payment' in the caption."
+            )
+            return
     
     try:
         # Record the submission
@@ -324,13 +327,10 @@ async def handle_screenshot(update: Update, context: CallbackContext) -> None:
         ]
         reply_markup = InlineKeyboardMarkup(keyboard)
         
-        # Check if this is coming from a blocked user
-        if is_user_blocked(user.id):
-            caption = (f"🚨 Payment verification from blocked user:\n"
-                      f"@{user.username or user.first_name} (ID: {user.id})\n"
-                      f"This user has reached the video limit.")
-        else:
-            caption = f"🆕 Payment screenshot from @{user.username or user.first_name} (ID: {user.id})"
+        # Create caption for admin
+        caption = (f"🆕 Payment from @{user.username or user.first_name} (ID: {user.id})\n"
+                  f"Status: {'BLOCKED (reached limit)' if is_user_blocked(user.id) else 'Active'}\n"
+                  f"User message: {update.message.caption or 'No caption'}")
         
         await context.bot.send_photo(
             chat_id=ADMIN_ID,
