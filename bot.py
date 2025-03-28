@@ -1,7 +1,6 @@
 import os
 import logging
 import json
-import pytesseract
 import io
 from PIL import Image
 from datetime import datetime
@@ -259,63 +258,7 @@ def save_payment_submission(payment_data):
     
     with open('payment_submissions.json', 'w', encoding='utf-8') as f:
         json.dump(data, f, indent=2)
-
-async def validate_screenshot(file_path, user_id):
-    """Basic automatic validation using OCR"""
-    try:
-        # Extract text from image
-        image = Image.open(file_path)
-        text = pytesseract.image_to_string(image)
-
-        # Check for required user ID in the text
-        if str(user_id) not in text:
-            return False, "User ID not found in screenshot"
-        
-        # Check for common payment indicators
-        indicators = [
-            "transfer", "payment", "sent", "transaction", 
-            "completed", "success", "хандив", "шилжүүлэг", 
-            "гүйлгээ", "дугаар", "амжилттай", "дүн"
-        ]
-        
-        # Count matching indicators
-        matches = sum(1 for word in indicators if word.lower() in text.lower())
-
-        # Additional checks for specific banks
-        bank_specific_checks = {
-            "golomt": ["голомт", "golomt", "лавлах дугаар"],
-            "khan": ["хан", "khan", "улдэгдэл", "хулээн авагч"]
-        }
-
-        # Determine which bank and check its specific requirements
-        bank = None
-        for bank_name, keywords in bank_specific_checks.items():
-            if any(keyword.lower() in text.lower() for keyword in keywords):
-                bank = bank_name
-                break
-        
-        if not bank:
-            return False, "Could not identify bank from screenshot"
-        
-        # Bank-specific validation
-        if bank == "golomt":
-            if not ("шилжүүлэгчийн" in text.lower() and "хүлээн авагчийн" in text.lower()):
-                return False, "Missing required Golomt bank fields"
-                
-        elif bank == "khan":
-            if not ("дансны улдэгдэл" in text.lower() and "гүйлгээний утга" in text.lower()):
-                return False, "Missing required Khan bank fields"
-        
-        # If we find enough indicators and user ID, consider it valid
-        if matches >= 3:
-            return True, "Validation successful"
-        else:
-            return False, f"Only found {matches} payment indicators (need at least 3)"
-        
-    except Exception as e:
-        logger.error(f"Error validating screenshot: {e}")
-        return False, f"Validation error: {str(e)}"
-    
+  
 async def notify_admin_payment_submission(context: CallbackContext, user, file_path):
     """Notify admin about new payment submission"""
     keyboard = [
@@ -348,38 +291,6 @@ async def handle_screenshot(update: Update, context: CallbackContext) -> None:
         return
     
     try:
-        # Get the photo file (highest resolution)
-        photo_file = await update.message.photo[-1].get_file()
-        
-        # Create a temporary file in memory
-        with io.BytesIO() as photo_buffer:
-            await photo_file.download_to_memory(out=photo_buffer)
-            photo_buffer.seek(0)
-            
-            try:
-                # Try OCR validation if Tesseract is available
-                try:
-                    image = Image.open(photo_buffer)
-                    photo_buffer.seek(0)  # Rewind after opening
-                    text = pytesseract.image_to_string(image)
-                    
-                    # Check for user ID in text
-                    if str(user.id) not in text:
-                        await update.message.reply_text(
-                            f"❌ User ID not found in screenshot\n\n"
-                            f"Your User ID: {user.id}\n"
-                            "Please include this ID in the transfer note/message."
-                        )
-                        return
-                except Exception as e:
-                    logger.warning(f"OCR validation skipped: {e}")
-                    # Continue without OCR validation
-            except Exception as e:
-                logger.error(f"Error processing image: {e}")
-                await update.message.reply_text(
-                    "❌ Error processing your screenshot. Please try again."
-                )
-                return
 
         # Record the submission
         payment_data = {
@@ -389,16 +300,16 @@ async def handle_screenshot(update: Update, context: CallbackContext) -> None:
             'timestamp': datetime.now().isoformat(),
             'status': 'pending'
         }
-        
+
         save_payment_submission(payment_data)
-        
+
         # Notify user
         await update.message.reply_text(
             "✅ Payment screenshot received!\n"
-            "We'll verify it shortly.\n\n"
+            "Admin will verify it shortly.\n\n"
             f"Your User ID: {user.id}"
         )
-        
+                
         # Forward to admin with approval buttons
         keyboard = [
             [InlineKeyboardButton("✅ Approve", callback_data=f"approve_{user.id}")],
@@ -409,7 +320,7 @@ async def handle_screenshot(update: Update, context: CallbackContext) -> None:
         await context.bot.send_photo(
             chat_id=ADMIN_ID,
             photo=update.message.photo[-1].file_id,
-            caption=f"🆕 Payment from @{user.username or user.first_name} (ID: {user.id})",
+            caption=f"🆕 Payment screenshot from @{user.username or user.first_name} (ID: {user.id})",
             reply_markup=reply_markup
         )
 
@@ -466,10 +377,11 @@ async def send_video_with_limit_check(update: Update, context: CallbackContext, 
     unique_videos = len({v['video_name'] for v in user_videos})
     
     if unique_videos >= MAX_VIDEOS_BEFORE_BLOCK:
-        # Send the 5th video first (without protect_content)
+        # Send the 5th video first (witho protect_content)
         await context.bot.send_video(
             chat_id=update.effective_chat.id,
             video=video_db[video_name],
+            protect_content=True,
             caption=f"Here's your requested video: {video_name}"
         )
         log_sent_video(user.id, video_name)
@@ -492,7 +404,7 @@ async def send_video_with_limit_check(update: Update, context: CallbackContext, 
         await notify_admin_limit_reached(context, user)
         return False
     
-    # Send video if under limit (with protect_content)
+    # Send video if under limit (with protected content)
     await context.bot.send_video(
         chat_id=update.effective_chat.id,
         video=video_db[video_name],
