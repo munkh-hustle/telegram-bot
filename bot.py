@@ -80,16 +80,13 @@ def save_blocked_users(blocked_users):
     with open(BLOCKED_USERS_FILE, 'w', encoding='utf-8') as f:
         json.dump(blocked_users, f, indent=2)
 
-def is_user_blocked(user_id, allow_photos=False):
-    """Check if user is blocked, with option to allow photo submissions"""
+def is_user_blocked(user_id):
+    """Check if user is blocked"""
     blocked_users = load_blocked_users()
     user_blocked = str(user_id) in blocked_users
-
+    
     if user_blocked:
         user_data = blocked_users.get(str(user_id), {})
-        # Allow photo submissions if not unblocked yet
-        if allow_photos and not user_data.get('unblocked'):
-            return False
         return not user_data.get('unblocked')
     return False
 
@@ -289,18 +286,7 @@ async def notify_admin_payment_submission(context: CallbackContext, user, file_p
 async def handle_screenshot(update: Update, context: CallbackContext) -> None:
     """Handle payment screenshot submissions"""
     user = update.effective_user
-    
-    # Check if user is blocked, but allow photo submissions for payment verification
-    if is_user_blocked(user.id):
-        # Only block if this isn't a payment screenshot (no caption or caption doesn't indicate payment)
-        caption = update.message.caption or ""
-        if not ("payment" in caption.lower() or "төлбөр" in caption.lower()):  # Check for payment in English/Mongolian
-            await context.bot.send_message(
-                chat_id=update.effective_chat.id,
-                text="⛔ Your account is blocked. Please send your payment screenshot with 'Payment' in the caption."
-            )
-            return
-    
+
     try:
         # Record the submission
         payment_data = {
@@ -392,7 +378,7 @@ async def send_video_with_limit_check(update: Update, context: CallbackContext, 
     unique_videos = len({v['video_name'] for v in user_videos})
     
     if unique_videos >= MAX_VIDEOS_BEFORE_BLOCK:
-        # Send the 5th video first (witho protect_content)
+        # Send the 5th video first (with protect_content)
         await context.bot.send_video(
             chat_id=update.effective_chat.id,
             video=video_db[video_name],
@@ -409,7 +395,8 @@ async def send_video_with_limit_check(update: Update, context: CallbackContext, 
             "🏦 Khan Bank: 5926271236\n\n"
             "Include this in the transaction description:\n"
             f"UserID:{user.id} 10000\n\n"
-            "After payment, send a screenshot of the transaction here."
+            "After payment, send a screenshot of the transaction here.\n"
+            "Admin will review it and approve your access."
         )
         await context.bot.send_message(
             chat_id=update.effective_chat.id,
