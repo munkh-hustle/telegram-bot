@@ -247,7 +247,7 @@ async def send_video_with_limit_check(update: Update, context: CallbackContext, 
         blocked_users = load_blocked_users()
         user_data = blocked_users.get(str(user.id), {})
         if not user_data.get('unblocked'):
-            await update.message.reply_text(
+            await context.bot.send_message(
                 chat_id=update.effective_chat.id,
                 text="You've reached the 5 video limit. Please wait for admin approval."
             )
