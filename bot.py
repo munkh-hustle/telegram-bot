@@ -80,10 +80,18 @@ def save_blocked_users(blocked_users):
     with open(BLOCKED_USERS_FILE, 'w', encoding='utf-8') as f:
         json.dump(blocked_users, f, indent=2)
 
-def is_user_blocked(user_id):
-    """Check if user is blocked"""
+def is_user_blocked(user_id, allow_photos=False):
+    """Check if user is blocked, with option to allow photo submissions"""
     blocked_users = load_blocked_users()
-    return str(user_id) in blocked_users
+    user_blocked = str(user_id) in blocked_users
+
+    if user_blocked:
+        user_data = blocked_users.get(str(user_id), {})
+        # Allow photo submissions if not unblocked yet
+        if allow_photos and not user_data.get('unblocked'):
+            return False
+        return not user_data.get('unblocked')
+    return False
 
 def block_user(user_id, username, first_name):
     """Block a user from receiving more videos"""
@@ -282,8 +290,8 @@ async def handle_screenshot(update: Update, context: CallbackContext) -> None:
     """Handle payment screenshot submissions"""
     user = update.effective_user
     
-    # Check if user is blocked first
-    if is_user_blocked(user.id):
+    # Check if user is blocked, but allow photo submissions
+    if is_user_blocked(user.id, allow_photos=False):  # Changed this line
         await context.bot.send_message(
             chat_id=update.effective_chat.id,
             text="⛔ Your account is blocked. Please wait for admin approval."
@@ -291,7 +299,6 @@ async def handle_screenshot(update: Update, context: CallbackContext) -> None:
         return
     
     try:
-
         # Record the submission
         payment_data = {
             'user_id': user.id,
@@ -352,7 +359,7 @@ async def reset_user(update: Update, context: CallbackContext) -> None:
 async def send_video_with_limit_check(update: Update, context: CallbackContext, user, video_name):
     """Handle video sending with limit checks"""
     # First check if user is blocked
-    if is_user_blocked(user.id):
+    if is_user_blocked(user.id):  # This stays the same
         blocked_users = load_blocked_users()
         user_data = blocked_users.get(str(user.id), {})
         if not user_data.get('unblocked'):
@@ -1033,6 +1040,8 @@ def main() -> None:
     application.add_handler(MessageHandler(filters.VIDEO, handle_video))
     application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
     application.add_handler(MessageHandler(filters.PHOTO, handle_screenshot))
+    application.add_handler(MessageHandler(filters.PHOTO & ~filters.COMMAND, handle_screenshot))
+
 
     
     application.add_error_handler(error_handler)
