@@ -31,11 +31,6 @@ USER_ACTIVITY_FILE = 'user_activity.json'
 BLOCKED_USERS_FILE = 'blocked_users.json'
 MAX_VIDEOS_BEFORE_BLOCK = 5
 
-# Directory to store videos
-VIDEO_DIR = 'videos'
-if not os.path.exists(VIDEO_DIR):
-    os.makedirs(VIDEO_DIR)
-
 # Dictionary to store video IDs and names
 video_db = {}
 def load_video_db():
