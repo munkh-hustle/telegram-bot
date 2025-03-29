@@ -787,10 +787,18 @@ async def button(update: Update, context: CallbackContext) -> None:
                     text="🎉 Your payment has been verified! You can now request videos again."
                 )
 
-                # Update admin message
-                await query.edit_message_text(
-                    text=f"✅ Payment from user ID {user_id} approved."
-                )
+                try:
+                    # Try to edit the original message
+                    await query.edit_message_text(
+                        text=f"✅ Payment from user ID {user_id} approved."
+                    )
+                except Exception as e:
+                    logger.error(f"Error editing approval message: {e}")
+                    # Fallback - send a new message if editing fails
+                    await context.bot.send_message(
+                        chat_id=ADMIN_ID,
+                        text=f"✅ Payment from user ID {user_id} approved."
+                    )
 
         elif query.data.startswith('reject_'):
             user_id = int(query.data[7:])
@@ -804,10 +812,19 @@ async def button(update: Update, context: CallbackContext) -> None:
                     text="❌ Your payment couldn't be verified. Please send a clear screenshot of your transaction."
                 )
 
-                # Update admin message
-                await query.edit_message_text(
-                    text=f"❌ Payment from user ID {user_id} rejected."
-                )
+                try:
+                    # Try to edit the original message
+                    await query.edit_message_text(
+                        text=f"❌ Payment from user ID {user_id} rejected."
+                    )
+                except Exception as e:
+                    logger.error(f"Error editing rejection message: {e}")
+                    # Fallback - send a new message if editing fails
+                    await context.bot.send_message(
+                        chat_id=ADMIN_ID,
+                        text=f"❌ Payment from user ID {user_id} rejected."
+                    )
+
 
     except Exception as e:
         logger.error(f"Error handling button press: {e}")
