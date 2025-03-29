@@ -61,5 +61,13 @@
     "timestamp": "2025-03-29T09:49:31.478221",
     "status": "approved",
     "processed_at": "2025-03-29T09:49:37.633978"
+  },
+  {
+    "user_id": 7942816218,
+    "username": "muunu03",
+    "first_name": "Solongos",
+    "timestamp": "2025-03-29T10:27:44.651923",
+    "status": "rejected",
+    "processed_at": "2025-03-29T10:28:19.651492"
   }
 ]
