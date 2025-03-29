@@ -69,5 +69,21 @@
     "timestamp": "2025-03-29T10:27:44.651923",
     "status": "rejected",
     "processed_at": "2025-03-29T10:28:19.651492"
+  },
+  {
+    "user_id": 7905267896,
+    "username": null,
+    "first_name": "404",
+    "timestamp": "2025-03-30T00:04:28.722008",
+    "status": "rejected",
+    "processed_at": "2025-03-30T00:05:34.992420"
+  },
+  {
+    "user_id": 7905267896,
+    "username": null,
+    "first_name": "404",
+    "timestamp": "2025-03-30T00:05:46.903581",
+    "status": "approved",
+    "processed_at": "2025-03-30T00:05:52.285558"
   }
 ]
