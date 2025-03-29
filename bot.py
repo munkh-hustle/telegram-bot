@@ -101,16 +101,6 @@ def block_user(user_id, username, first_name):
     }
     save_blocked_users(blocked_users)
 
-def unblock_user(user_id):
-    """Unblock a user"""
-    blocked_users = load_blocked_users()
-    if str(user_id) in blocked_users:
-        blocked_users[str(user_id)]['unblocked'] = True
-        blocked_users[str(user_id)]['unblocked_at'] = datetime.now().isoformat()
-        save_blocked_users(blocked_users)
-        return True
-    return False
-
 def record_user_activity(user_id, username, first_name, last_name, video_name):
     """Record that a video was sent to a user"""
     activity_data = load_user_activity()
