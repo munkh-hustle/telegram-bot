@@ -1,0 +1,16 @@
+nohup: ignoring input
+2025-03-29 09:23:14,734 - httpx - INFO - HTTP Request: POST https://api.telegram.org/bot7641317425:AAHfWDG6uHQZeG8BQ5JvuvjMFvLFgrqbh9Q/getMe "HTTP/1.1 200 OK"
+2025-03-29 09:23:15,097 - httpx - INFO - HTTP Request: POST https://api.telegram.org/bot7641317425:AAHfWDG6uHQZeG8BQ5JvuvjMFvLFgrqbh9Q/deleteWebhook "HTTP/1.1 200 OK"
+2025-03-29 09:23:15,109 - telegram.ext.Application - INFO - Application started
+2025-03-29 09:23:16,165 - httpx - INFO - HTTP Request: POST https://api.telegram.org/bot7641317425:AAHfWDG6uHQZeG8BQ5JvuvjMFvLFgrqbh9Q/getUpdates "HTTP/1.1 200 OK"
+2025-03-29 09:23:16,694 - httpx - INFO - HTTP Request: POST https://api.telegram.org/bot7641317425:AAHfWDG6uHQZeG8BQ5JvuvjMFvLFgrqbh9Q/sendMessage "HTTP/1.1 200 OK"
+2025-03-29 09:23:17,223 - httpx - INFO - HTTP Request: POST https://api.telegram.org/bot7641317425:AAHfWDG6uHQZeG8BQ5JvuvjMFvLFgrqbh9Q/sendVideo "HTTP/1.1 200 OK"
+2025-03-29 09:23:17,744 - httpx - INFO - HTTP Request: POST https://api.telegram.org/bot7641317425:AAHfWDG6uHQZeG8BQ5JvuvjMFvLFgrqbh9Q/sendMessage "HTTP/1.1 200 OK"
+2025-03-29 09:23:26,567 - httpx - INFO - HTTP Request: POST https://api.telegram.org/bot7641317425:AAHfWDG6uHQZeG8BQ5JvuvjMFvLFgrqbh9Q/getUpdates "HTTP/1.1 200 OK"
+2025-03-29 09:23:34,657 - httpx - INFO - HTTP Request: POST https://api.telegram.org/bot7641317425:AAHfWDG6uHQZeG8BQ5JvuvjMFvLFgrqbh9Q/getUpdates "HTTP/1.1 200 OK"
+2025-03-29 09:23:35,897 - httpx - INFO - HTTP Request: POST https://api.telegram.org/bot7641317425:AAHfWDG6uHQZeG8BQ5JvuvjMFvLFgrqbh9Q/sendMessage "HTTP/1.1 200 OK"
+2025-03-29 09:23:45,028 - httpx - INFO - HTTP Request: POST https://api.telegram.org/bot7641317425:AAHfWDG6uHQZeG8BQ5JvuvjMFvLFgrqbh9Q/getUpdates "HTTP/1.1 200 OK"
+2025-03-29 09:23:55,445 - httpx - INFO - HTTP Request: POST https://api.telegram.org/bot7641317425:AAHfWDG6uHQZeG8BQ5JvuvjMFvLFgrqbh9Q/getUpdates "HTTP/1.1 200 OK"
+2025-03-29 09:24:00,224 - httpx - INFO - HTTP Request: POST https://api.telegram.org/bot7641317425:AAHfWDG6uHQZeG8BQ5JvuvjMFvLFgrqbh9Q/getUpdates "HTTP/1.1 200 OK"
+2025-03-29 09:24:00,228 - telegram.ext.Application - INFO - Application is stopping. This might take a moment.
+2025-03-29 09:24:00,229 - telegram.ext.Application - INFO - Application.stop() complete
