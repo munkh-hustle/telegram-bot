@@ -80,15 +80,15 @@
         function displayVideos(videoList) {
             const container = document.getElementById('video-container');
             const errorDiv = document.getElementById('error-message');
-                
+
             if (!videoList || videoList.length === 0) {
                 container.innerHTML = '<div class="loading">No videos found</div>';
                 return;
             }
-            
+
             container.innerHTML = '';
             errorDiv.style.display = 'none';
-            
+
             videoList.forEach(video => {
                 if (!video.file_id) {
                     console.warn(`Video ${video.id} has no file_id, skipping`);
@@ -97,19 +97,19 @@
             
                 const videoCard = document.createElement('div');
                 videoCard.className = 'video-card';
-                
+
                 // Create thumbnail container
                 const thumbnailContainer = document.createElement('div');
                 thumbnailContainer.className = 'video-thumbnail-container';
-                
+
                 if (video.youtube_id) {
                     const img = document.createElement('img');
                     img.className = 'video-thumbnail';
                     img.alt = video.title;
-                    
+
                     // First try mqdefault (more reliable)
                     img.src = `https://img.youtube.com/vi/${video.youtube_id}/mqdefault.jpg`;
-                    
+
                     img.onerror = function() {
                         // Fallback to hqdefault if mqdefault fails
                         this.src = `https://img.youtube.com/vi/${video.youtube_id}/hqdefault.jpg`;
@@ -118,7 +118,7 @@
                             thumbnailContainer.innerHTML = '<div class="no-thumbnail">No preview</div>';
                         };
                     };
-                    
+
                     thumbnailContainer.appendChild(img);
                 } else {
                     thumbnailContainer.innerHTML = '<div class="no-thumbnail">No preview</div>';
