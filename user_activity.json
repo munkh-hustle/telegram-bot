@@ -3,28 +3,7 @@
     "username": "muunu03",
     "first_name": "Solongos",
     "last_name": "Khel",
-    "videos": [
-      {
-        "video_name": "secret-relationship-1-1",
-        "timestamp": "2025-03-31T02:26:07.656525"
-      },
-      {
-        "video_name": "brokeback-mountain-2005",
-        "timestamp": "2025-03-31T02:49:14.350166"
-      },
-      {
-        "video_name": "bros-2022",
-        "timestamp": "2025-03-31T02:49:16.285092"
-      },
-      {
-        "video_name": "monster-2023",
-        "timestamp": "2025-03-31T02:49:18.146860"
-      },
-      {
-        "video_name": "pluto-1-2",
-        "timestamp": "2025-03-31T02:49:20.237978"
-      }
-    ]
+    "videos": []
   },
   "7905267896": {
     "username": null,

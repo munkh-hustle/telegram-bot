@@ -568,7 +568,7 @@ async def notify_admin_limit_reached(context: CallbackContext, user):
 async def unblock_command(update: Update, context: CallbackContext) -> None:
     """Unblock a user by ID (admin only)"""
     if not is_admin(update):
-        await update.message.reply_text("Permission denied.")
+        await update.message.reply_text("Зөвхөн админ.")
         return
     
     if not context.args:
@@ -582,7 +582,7 @@ async def unblock_command(update: Update, context: CallbackContext) -> None:
             # Notify the user
             await context.bot.send_message(
                 chat_id=user_id,
-                text="🎉 You've been unblocked by admin! You can now request videos again."
+                text="🎉Таны зөвшөөрсөн байна. www.kino.com киногоо үргэлжлүүлэн үзнэ үү"
             )
         else:
             await update.message.reply_text(f"User {user_id} wasn't blocked.")
@@ -617,7 +617,7 @@ async def handle_message(update: Update, context: CallbackContext) -> None:
             # Notify the user
             await context.bot.send_message(
                 chat_id=user_id,
-                text=f"🎉 Your payment has been verified! You can now request up to {new_limit} videos."
+                text=f"🎉 Таны хүсэлт баталгаажлаа! Та одоо {new_limit} удаа кино үзэх эрхтэй боллоо."
             )
             
             # Clear the awaiting state
@@ -646,7 +646,7 @@ async def start(update: Update, context: CallbackContext) -> None:
     if context.args and context.args[0].startswith('video_'):
         video_name = context.args[0][6:]
         if video_name in video_db:
-            await update.message.reply_text("Sending your video...")
+            await update.message.reply_text("Кино илгээж байна...")
             success = await send_video_with_limit_check(update, context, user, video_name)
             if not success:
                 return
@@ -659,7 +659,7 @@ async def start(update: Update, context: CallbackContext) -> None:
 async def blocked_users(update: Update, context: CallbackContext) -> None:
     """Show list of blocked users (admin only)"""
     if not is_admin(update):
-        await update.message.reply_text("You don't have permission to use this command.")
+        await update.message.reply_text("Зөвхөн админ.")
         return
     
     blocked_users = load_blocked_users()
@@ -699,7 +699,7 @@ async def blocked_users(update: Update, context: CallbackContext) -> None:
 
 async def help_command(update: Update, context: CallbackContext) -> None:
     """Send a message when the command /help is issued."""
-    await update.message.reply_text('Help!')
+    await update.message.reply_text('Тусламж!')
 
 def is_admin(update: Update):
     """Check if user is admin"""
@@ -708,7 +708,7 @@ def is_admin(update: Update):
 async def addvideo(update: Update, context: CallbackContext) -> None:
     """Add video to database (admin only)"""
     if not is_admin(update):
-        await update.message.reply_text("You don't have permission to use this command.")
+        await update.message.reply_text("Зөвхөн админ.")
         return
     
     if not context.args:
@@ -739,7 +739,7 @@ async def addvideo(update: Update, context: CallbackContext) -> None:
 async def sync(update: Update, context: CallbackContext) -> None:
     """Manually sync video data (admin only)"""
     if not is_admin(update):
-        await update.message.reply_text("You don't have permission to use this command.")
+        await update.message.reply_text("Зөвхөн админ.")
         return
     
     if sync_video_data():
@@ -750,7 +750,7 @@ async def sync(update: Update, context: CallbackContext) -> None:
 async def video_logs(update: Update, context: CallbackContext) -> None:
     """Show video delivery logs (admin only)"""
     if not is_admin(update):
-        await update.message.reply_text("Permission denied.")
+        await update.message.reply_text("Зөвхөн админ.")
         return
     
     try:
@@ -786,7 +786,7 @@ async def video_logs(update: Update, context: CallbackContext) -> None:
 async def rename(update: Update, context: CallbackContext) -> None:
     """Rename video in database (admin only)"""
     if not is_admin(update):
-        await update.message.reply_text("You don't have permission to use this command.")
+        await update.message.reply_text("Зөвхөн админ.")
         return
     
     if len(context.args) < 2:
@@ -826,7 +826,7 @@ async def rename(update: Update, context: CallbackContext) -> None:
 async def delete(update: Update, context: CallbackContext) -> None:
     """Delete video from database (admin only)"""
     if not is_admin(update):
-        await update.message.reply_text("You don't have permission to use this command.")
+        await update.message.reply_text("Зөвхөн админ")
         return
     
     if not context.args:
@@ -851,8 +851,12 @@ async def delete(update: Update, context: CallbackContext) -> None:
 
 async def list_videos(update: Update, context: CallbackContext) -> None:
     """List all available videos"""
+    if not is_admin(update):
+        await update.message.reply_text("Зөвхөн админ")
+        return
+    
     if not video_db:
-        await update.message.reply_text("No videos available.")
+        await update.message.reply_text("Кино одсонгүй.")
         return
     
     keyboard = []
@@ -877,7 +881,7 @@ async def button(update: Update, context: CallbackContext) -> None:
                     success = await send_video_with_limit_check(update, context, user, video_name)
 
                     if not success:
-                        await query.edit_message_text(text="You've reached the video limit.")
+                        await query.edit_message_text(text="Кино үзэх эрх дууслаа.")
                 except Exception as e:
                     logger.error(f"Error sending video: {e}")
                     await context.bot.send_message(
@@ -913,7 +917,7 @@ async def button(update: Update, context: CallbackContext) -> None:
                     try:
                         await context.bot.send_message(
                             chat_id=user_id,
-                            text="🎉 You've been unblocked by admin! Your video count has been reset."
+                            text="🎉 Та үргэлжлүүлэн кино үзэх боломжтой боллоо. www.kino.com орно уу"
                         )
                     except Exception as e:
                         logger.error(f"Error notifying unblocked user: {e}")
@@ -964,7 +968,7 @@ async def button(update: Update, context: CallbackContext) -> None:
                     # Notify user
                     await context.bot.send_message(
                         chat_id=user_id,
-                        text="🎉 Your payment has been verified! Admin is setting up your new access."
+                        text="🎉 Таны хүсэлт баталгаажлаа."
                     )
 
                 except Exception as e:
@@ -990,7 +994,7 @@ async def button(update: Update, context: CallbackContext) -> None:
                     # Notify user
                     await context.bot.send_message(
                         chat_id=user_id,
-                        text="❌ Your payment couldn't be verified. Please send a clear screenshot of your transaction."
+                        text="❌ Таны хүсэлт баталгаажсангүй. Гүйлгээ хийсэн зургаа явуулж баталгаажуулна уу."
                     )
 
                     try:
@@ -1118,7 +1122,7 @@ async def handle_video(update: Update, context: CallbackContext) -> None:
 async def user_stats(update: Update, context: CallbackContext) -> None:
     """Show user activity statistics (admin only)"""
     if not is_admin(update):
-        await update.message.reply_text("You don't have permission to use this command.")
+        await update.message.reply_text("Зөвхөн админ.")
         return
     
     # Check if this is a search request
@@ -1163,7 +1167,7 @@ async def error_handler(update: Update, context: CallbackContext) -> None:
 async def verify_payment(update: Update, context: CallbackContext) -> None:
     """Verify a payment manually (admin only)"""
     if not is_admin(update):
-        await update.message.reply_text("You don't have permission to use this command.")
+        await update.message.reply_text("Зөвхөн админ.")
         return
     
     if not context.args:
@@ -1193,14 +1197,14 @@ async def verify_payment(update: Update, context: CallbackContext) -> None:
             # Notify the user
             await context.bot.send_message(
                 chat_id=user_id,
-                text="🎉 Your payment has been verified! You can now request videos again."
+                text="🎉 Таны хүсэлт баталгаажлаа. Үргэлжлүүлэн www.kino.com үзэх боломжтой"
             )
         else:
             await update.message.reply_text(f"❌ Payment from user {user_id} rejected.")
             # Notify the user
             await context.bot.send_message(
                 chat_id=user_id,
-                text="❌ Your payment was rejected. Please contact support if you believe this is an error."
+                text="❌ Таны хүсэлт баталгаажсангүй. Алдаа гэж үзэж байвал админтай холбогдоно уу."
             )
             
     except ValueError:
