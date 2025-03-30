@@ -108,16 +108,34 @@ h1 {
     display: block;
     text-align: center;
     padding: 10px;
-    background: #0088cc;
+    background: linear-gradient(
+        to right,
+        #ff0018 0%, 
+        #ffa52c 15%,
+        #ffff41 30%,
+        #008018 45%,
+        #0000f9 60%,
+        #86007d 75%
+    );
+    background-size: 600% 100%;
+    animation: rainbow 4s linear infinite;
     color: white;
     text-decoration: none;
     border-radius: 6px;
     font-weight: 500;
-    transition: background 0.2s;
+    transition: all 0.3s ease;
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    border: 2px solid #0088cc;
 }
 
 .video-button:hover {
-    background: #006699;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+    border-color: transparent;
+    background-clip: border-box;
+    color: white;
 }
 
 .instructions {
