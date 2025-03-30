@@ -103,8 +103,13 @@
                 const videoCard = document.createElement('div');
                 videoCard.className = 'video-card';
                 videoCard.innerHTML = `
-                    <div class="video-thumbnail" style="background-image: url('${thumbnailUrl}')">
-                        ${!thumbnailUrl ? '<div class="no-thumbnail">No preview</div>' : ''}
+                    <div class="video-thumbnail-container">
+                        ${video.youtube_id ? 
+                            `<img class="video-thumbnail" 
+                                  src="https://img.youtube.com/vi/${video.youtube_id}/mqdefault.jpg" 
+                                  alt="${video.title}"
+                                  onerror="this.onerror=null;this.src='https://img.youtube.com/vi/${video.youtube_id}/hqdefault.jpg'">` : 
+                            '<div class="no-thumbnail">No preview</div>'}
                     </div>
                     <div class="video-info">
                         <div class="video-title">${video.title}</div>
