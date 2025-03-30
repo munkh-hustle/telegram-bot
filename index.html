@@ -94,34 +94,53 @@
                     console.warn(`Video ${video.id} has no file_id, skipping`);
                     return;
                 }
-
-                // YouTube thumbnail URL (default to maxres if available, fallback to hqdefault)
-                const thumbnailUrl = video.youtube_id ? 
-                    `https://img.youtube.com/vi/${video.youtube_id}/maxresdefault.jpg` : 
-                    '';
-                
+            
                 const videoCard = document.createElement('div');
                 videoCard.className = 'video-card';
-                videoCard.innerHTML = `
-                    <div class="video-thumbnail-container">
-                        ${video.youtube_id ? 
-                            `<img class="video-thumbnail" 
-                                  src="https://img.youtube.com/vi/${video.youtube_id}/mqdefault.jpg" 
-                                  alt="${video.title}"
-                                  onerror="this.onerror=null;this.src='https://img.youtube.com/vi/${video.youtube_id}/hqdefault.jpg'">` : 
-                            '<div class="no-thumbnail">No preview</div>'}
-                    </div>
-                    <div class="video-info">
-                        <div class="video-title">${video.title}</div>
-                        <div class="video-desc">${video.description}</div>
-                        <a href="video.html?id=${video.id}" 
-                            class="video-button"
-                            target="_blank"
-                            rel="noopener noreferrer">
-                            View Details
-                        </a>
-                    </div>
+                
+                // Create thumbnail container
+                const thumbnailContainer = document.createElement('div');
+                thumbnailContainer.className = 'video-thumbnail-container';
+                
+                if (video.youtube_id) {
+                    const img = document.createElement('img');
+                    img.className = 'video-thumbnail';
+                    img.alt = video.title;
+                    
+                    // First try mqdefault (more reliable)
+                    img.src = `https://img.youtube.com/vi/${video.youtube_id}/mqdefault.jpg`;
+                    
+                    img.onerror = function() {
+                        // Fallback to hqdefault if mqdefault fails
+                        this.src = `https://img.youtube.com/vi/${video.youtube_id}/hqdefault.jpg`;
+                        this.onerror = function() {
+                            // Final fallback if both fail
+                            thumbnailContainer.innerHTML = '<div class="no-thumbnail">No preview</div>';
+                        };
+                    };
+                    
+                    thumbnailContainer.appendChild(img);
+                } else {
+                    thumbnailContainer.innerHTML = '<div class="no-thumbnail">No preview</div>';
+                }
+                
+                // Create video info
+                const videoInfo = document.createElement('div');
+                videoInfo.className = 'video-info';
+                videoInfo.innerHTML = `
+                    <div class="video-title">${video.title}</div>
+                    <div class="video-desc">${video.description}</div>
+                    <a href="video.html?id=${video.id}" 
+                        class="video-button"
+                        target="_blank"
+                        rel="noopener noreferrer">
+                        View Details
+                    </a>
                 `;
+                
+                // Assemble the card
+                videoCard.appendChild(thumbnailContainer);
+                videoCard.appendChild(videoInfo);
                 container.appendChild(videoCard);
             });
         }
