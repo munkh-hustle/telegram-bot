@@ -132,3 +132,8 @@
 {"timestamp": "2025-03-30T00:10:10.100121", "user_id": 7942816218, "video_name": "studio", "status": "sent"}
 {"timestamp": "2025-03-30T00:10:19.561863", "user_id": 7942816218, "video_name": "cat", "status": "sent"}
 {"timestamp": "2025-03-30T00:11:20.175716", "user_id": 7942816218, "video_name": "zoom_in", "status": "sent"}
+{"timestamp": "2025-03-30T14:03:10.375213", "user_id": 7942816218, "video_name": "pluto-1-2", "status": "sent"}
+{"timestamp": "2025-03-30T14:03:24.343422", "user_id": 7942816218, "video_name": "studio", "status": "sent"}
+{"timestamp": "2025-03-30T14:03:39.125483", "user_id": 7942816218, "video_name": "cat", "status": "sent"}
+{"timestamp": "2025-03-30T14:03:47.956125", "user_id": 7942816218, "video_name": "cat", "status": "sent"}
+{"timestamp": "2025-03-30T14:03:51.485146", "user_id": 7942816218, "video_name": "finance", "status": "sent"}

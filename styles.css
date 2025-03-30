@@ -102,7 +102,7 @@ h1 {
     position: relative;
 }
 
-.no-thumbnail {
+.video-thumbnail .no-thumbnail {
     position: absolute;
     top: 0;
     left: 0;

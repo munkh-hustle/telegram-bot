@@ -81,6 +81,16 @@ header h1 a {
     border-radius: 8px;
 }
 
+.no-thumbnail {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    color: #6c757d;
+    background-color: #e9ecef;
+    border-radius: 8px;
+}
+
 .telegram-button {
     display: inline-block;
     padding: 12px 24px;
