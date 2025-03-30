@@ -598,14 +598,14 @@ async def handle_message(update: Update, context: CallbackContext) -> None:
             new_limit = int(message.text)
             user_id = context.user_data['awaiting_limit']
             
-            # Update payment status
+            # Update payment status (again in case it wasn't saved)
             update_payment_status(user_id, 'approved')
 
             # Unblock user
             unblock_user(user_id)
             reset_user_video_count(user_id)
             
-            # Store the custom limit (we'll need to add this functionality)
+            # Store the custom limit
             set_user_video_limit(user_id, new_limit)
 
             await update.message.reply_text(
@@ -932,42 +932,35 @@ async def button(update: Update, context: CallbackContext) -> None:
         elif query.data.startswith('approve_'):
             user_id = int(query.data[8:])
             if is_admin(update):
-                # Update payment status
-                update_payment_status(user_id, 'approved')
-
-                # Unblock user
-                unblock_user(user_id)
-                reset_user_video_count(user_id)
-
-                # Store user_id in context to use in the next message
-                context.user_data['awaiting_limit'] = user_id
-
-                # Ask admin for the new limit
-                await query.edit_message_text(
-                    text=f"✅ Payment from user ID {user_id} approved.\n"
-                         "Please send the new video limit for this user (e.g., '10')."
-                )
-
-                # Notify user
-                await context.bot.send_message(
-                    chat_id=user_id,
-                    text="🎉 Your payment has been verified! You can now request videos again."
-                )
-
-                
-
                 try:
-                    # Try to edit the original message
+                    # Update payment status
+                    update_payment_status(user_id, 'approved')
+
+                    # Unblock user
+                    unblock_user(user_id)
+                    reset_user_video_count(user_id)
+
+                    # Store user_id in context to use in the next message
+                    context.user_data['awaiting_limit'] = user_id
+
+                    # Ask admin for the new limit
                     await query.edit_message_text(
-                        text=f"✅ Payment from user ID {user_id} approved."
+                        text=f"✅ Payment from user ID {user_id} approved.\n"
+                             "Please send the new video limit for this user (e.g., '10')."
                     )
-                except Exception as e:
-                    logger.error(f"Error editing approval message: {e}")
-                    # Fallback - send a new message if editing fails
+
+                    # Notify user
                     await context.bot.send_message(
-                        chat_id=ADMIN_ID,
-                        text=f"✅ Payment from user ID {user_id} approved."
+                        chat_id=user_id,
+                        text="🎉 Your payment has been verified! Admin is setting up your new access."
                     )
+
+                except Exception as e:
+                    logger.error(f"Error approving payment: {e}")
+                    await query.edit_message_text(
+                        text=f"❌ Error approving payment: {str(e)}"
+                    )
+
 
         elif query.data.startswith('reject_'):
             user_id = int(query.data[7:])
