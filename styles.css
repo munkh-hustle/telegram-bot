@@ -103,7 +103,30 @@ h1 {
     -webkit-box-orient: vertical;
     overflow: hidden;
 }
+.video-thumbnail-container {
+    height: 140px;
+    background-color: #e9ecef;
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+    margin-bottom: 10px;
+    border-radius: 8px;
+    position: relative;
+    overflow: hidden;
+}
 
+.no-thumbnail {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #6c757d;
+    font-size: 14px;
+}
 .video-thumbnail .no-thumbnail {
     position: absolute;
     top: 0;
