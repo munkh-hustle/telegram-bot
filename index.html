@@ -42,13 +42,13 @@
                     throw new Error('Failed to load video data');
                 }
                 const data = await response.json();
+                // Convert to array and reverse the order
                 return Object.entries(data).map(([id, video]) => ({
                     id: id,
                     title: video.title || `Video ${id}`,
                     description: video.description || "No description available",
                     file_id: video.file_id || ""
-                    // Removed thumbnail field
-                }));
+                })).reverse(); // This reverses the array
             } catch (error) {
                 console.error("Error loading video data:", error);
                 showError("Failed to load video data. Please refresh the page.");
