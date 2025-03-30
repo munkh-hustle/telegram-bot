@@ -31,6 +31,8 @@ USER_ACTIVITY_FILE = 'user_activity.json'
 BLOCKED_USERS_FILE = 'blocked_users.json'
 MAX_VIDEOS_BEFORE_BLOCK = 5
 
+USER_LIMITS_FILE = 'user_limits.json'
+
 # Dictionary to store video IDs and names
 video_db = {}
 def load_video_db():
@@ -48,6 +50,30 @@ def save_video_db():
         json.dump(video_db, f, indent=2)
 
 load_video_db()
+
+def load_user_limits():
+    """Load user video limits from JSON file"""
+    try:
+        with open(USER_LIMITS_FILE, 'r', encoding='utf-8') as f:
+            return json.load(f)
+    except (FileNotFoundError, json.JSONDecodeError):
+        return {}
+
+def save_user_limits(limits):
+    """Save user video limits to JSON file"""
+    with open(USER_LIMITS_FILE, 'w', encoding='utf-8') as f:
+        json.dump(limits, f, indent=2)
+
+def set_user_video_limit(user_id, limit):
+    """Set a custom video limit for a user"""
+    limits = load_user_limits()
+    limits[str(user_id)] = limit
+    save_user_limits(limits)
+
+def get_user_video_limit(user_id):
+    """Get a user's video limit (defaults to MAX_VIDEOS_BEFORE_BLOCK if not set)"""
+    limits = load_user_limits()
+    return limits.get(str(user_id), MAX_VIDEOS_BEFORE_BLOCK)
 
 def load_user_activity():
     """Load user activity data from file"""
@@ -249,6 +275,37 @@ def save_payment_submission(payment_data):
     with open('payment_submissions.json', 'w', encoding='utf-8') as f:
         json.dump(data, f, indent=2)
 
+async def user_limits(update: Update, context: CallbackContext) -> None:
+    """View or set user limits (admin only)"""
+    if not is_admin(update):
+        await update.message.reply_text("Permission denied.")
+        return
+    
+    if len(context.args) >= 2:
+        # Setting a new limit
+        try:
+            user_id = int(context.args[0])
+            new_limit = int(context.args[1])
+            
+            set_user_video_limit(user_id, new_limit)
+            await update.message.reply_text(
+                f"✅ Limit for user {user_id} set to {new_limit} videos."
+            )
+        except ValueError:
+            await update.message.reply_text("Usage: /userlimit <user_id> <limit>")
+    else:
+        # Viewing limits
+        limits = load_user_limits()
+        if not limits:
+            await update.message.reply_text("No custom limits set.")
+            return
+            
+        message = ["📊 Custom User Limits:"]
+        for user_id, limit in limits.items():
+            message.append(f"\n👤 User ID: {user_id} - Limit: {limit} videos")
+        
+        await update.message.reply_text('\n'.join(message))
+
 async def edit_description(update: Update, context: CallbackContext) -> None:
     """Edit video description (admin only)"""
     if not is_admin(update):
@@ -439,13 +496,14 @@ async def send_video_with_limit_check(update: Update, context: CallbackContext, 
         video_name
     )
     
-    # Check if user reached limit
+    # Check if user reached limit (using their custom limit if set)
+    user_limit = get_user_video_limit(user.id)
     activity_data = load_user_activity()
     user_videos = activity_data.get(str(user.id), {}).get('videos', [])
     unique_videos = len({v['video_name'] for v in user_videos})
     
-    if unique_videos >= MAX_VIDEOS_BEFORE_BLOCK:
-        # Send the 5th video first (with protect_content)
+    if unique_videos >= user_limit:
+        # Send the video first (with protect_content)
         await context.bot.send_video(
             chat_id=update.effective_chat.id,
             video=video_db[video_name],
@@ -457,7 +515,7 @@ async def send_video_with_limit_check(update: Update, context: CallbackContext, 
         # Then block them and send payment instructions
         block_user(user.id, user.username, user.first_name)
         payment_message = (
-            "⚠️ You've reached the 5 video limit.\n\n"
+            f"⚠️ You've reached your limit of {user_limit} videos.\n\n"
             "To continue accessing videos, please send 10,000 MNT to:\n"
             "🏦 Khan Bank: 5926271236\n\n"
             "Include this in the transaction description:\n"
@@ -534,7 +592,41 @@ async def handle_message(update: Update, context: CallbackContext) -> None:
     user = update.effective_user
     message = update.effective_message
     
-    # Don't log commands or videos (already handled)
+    # Check if admin is setting a limit for a user
+    if is_admin(update) and 'awaiting_limit' in context.user_data:
+        try:
+            new_limit = int(message.text)
+            user_id = context.user_data['awaiting_limit']
+            
+            # Update payment status
+            update_payment_status(user_id, 'approved')
+
+            # Unblock user
+            unblock_user(user_id)
+            reset_user_video_count(user_id)
+            
+            # Store the custom limit (we'll need to add this functionality)
+            set_user_video_limit(user_id, new_limit)
+
+            await update.message.reply_text(
+                f"✅ User {user_id} approved with new limit: {new_limit} videos."
+            )
+            
+            # Notify the user
+            await context.bot.send_message(
+                chat_id=user_id,
+                text=f"🎉 Your payment has been verified! You can now request up to {new_limit} videos."
+            )
+            
+            # Clear the awaiting state
+            del context.user_data['awaiting_limit']
+            return
+            
+        except ValueError:
+            await update.message.reply_text("Please enter a valid number for the limit.")
+            return
+    
+    # Existing message logging functionality
     if message.text and not message.text.startswith('/'):
         log_user_message(
             user_id=user.id,
@@ -847,11 +939,22 @@ async def button(update: Update, context: CallbackContext) -> None:
                 unblock_user(user_id)
                 reset_user_video_count(user_id)
 
+                # Store user_id in context to use in the next message
+                context.user_data['awaiting_limit'] = user_id
+
+                # Ask admin for the new limit
+                await query.edit_message_text(
+                    text=f"✅ Payment from user ID {user_id} approved.\n"
+                         "Please send the new video limit for this user (e.g., '10')."
+                )
+
                 # Notify user
                 await context.bot.send_message(
                     chat_id=user_id,
                     text="🎉 Your payment has been verified! You can now request videos again."
                 )
+
+                
 
                 try:
                     # Try to edit the original message
@@ -1115,6 +1218,8 @@ def main() -> None:
     application.add_handler(CommandHandler("reload", reload_data))
     application.add_handler(CommandHandler("editdescription", edit_description))
     application.add_handler(CommandHandler("edittitle", edit_title))
+    application.add_handler(CommandHandler("userlimit", user_limits))
+
 
     
     # Handle button presses
