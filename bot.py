@@ -508,7 +508,7 @@ async def send_video_with_limit_check(update: Update, context: CallbackContext, 
             chat_id=update.effective_chat.id,
             video=video_db[video_name],
             protect_content=True,
-            caption=f"Таны үзэхгийг хүссэн кино. Энэ байна."
+            caption="Таны үзэхгийг хүссэн кино. Энэ байна."
         )
         log_sent_video(user.id, video_name)
 
@@ -538,7 +538,7 @@ async def send_video_with_limit_check(update: Update, context: CallbackContext, 
         chat_id=update.effective_chat.id,
         video=video_db[video_name],
         protect_content=True,
-        caption=f"Here's your requested video: {video_name}"
+        caption="Таны үзэхгийг хүссэн кино. Энэ байна."
     )
     log_sent_video(user.id, video_name)
     return True
