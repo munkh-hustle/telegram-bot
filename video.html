@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Video Details - LGBTlex</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f8f9fa;
+            color: #333;
+        }
+        .video-container {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+        .video-title {
+            font-size: 24px;
+            font-weight: 600;
+            margin-bottom: 10px;
+            color: #0088cc;
+        }
+        .video-meta {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 15px;
+            color: #6c757d;
+        }
+        .video-description {
+            margin-bottom: 25px;
+            line-height: 1.6;
+        }
+        .video-thumbnail {
+            width: 100%;
+            height: 400px;
+            background-color: #e9ecef;
+            background-size: cover;
+            background-position: center;
+            margin-bottom: 20px;
+            border-radius: 8px;
+        }
+        .telegram-button {
+            display: inline-block;
+            padding: 12px 24px;
+            background: #0088cc;
+            color: white;
+            text-decoration: none;
+            border-radius: 6px;
+            font-weight: 500;
+            transition: background 0.2s;
+            text-align: center;
+        }
+        .telegram-button:hover {
+            background: #006699;
+        }
+        .back-link {
+            display: inline-block;
+            margin-top: 20px;
+            color: #0088cc;
+            text-decoration: none;
+        }
+        .loading, .error-message {
+            text-align: center;
+            padding: 40px;
+        }
+    </style>
+</head>
+<body>
+    <div id="video-details">
+        <div class="loading">Loading video details...</div>
+    </div>
+
+    <script>
+        const BOT_USERNAME = "lgbt_kino_bot";
+        
+        async function loadVideoDetails(videoId) {
+            try {
+                // Load all videos
+                const response = await fetch('video_data.json');
+                if (!response.ok) throw new Error('Failed to load video data');
+                const videos = await response.json();
+                
+                // Find the specific video
+                const video = videos[videoId];
+                if (!video) throw new Error('Video not found');
+                
+                return {
+                    id: videoId,
+                    title: video.title || `Video ${videoId}`,
+                    description: video.description || "No description available",
+                    views: video.views || 0,
+                    file_id: video.file_id || ""
+                };
+            } catch (error) {
+                console.error("Error loading video:", error);
+                throw error;
+            }
+        }
+
+        function displayVideoDetails(video) {
+            const container = document.getElementById('video-details');
+            
+            container.innerHTML = `
+                <div class="video-container">
+                    <h1 class="video-title">${video.title}</h1>
+                    <div class="video-meta">
+                        <span>👁️ ${video.views} views</span>
+                    </div>
+                    <div class="video-thumbnail" style="background-image: url('${video.thumbnail || ''}')"></div>
+                    <div class="video-description">
+                        ${video.description}
+                    </div>
+                    <a href="https://t.me/${BOT_USERNAME}?start=video_${video.id}" 
+                       class="telegram-button"
+                       target="_blank"
+                       rel="noopener noreferrer">
+                       Get This Video on Telegram
+                    </a>
+                </div>
+                <a href="index.html" class="back-link">← Back to all videos</a>
+            `;
+        }
+
+        // Get video ID from URL
+        const urlParams = new URLSearchParams(window.location.search);
+        const videoId = urlParams.get('id');
+
+        // Load and display video
+        if (videoId) {
+            loadVideoDetails(videoId)
+                .then(displayVideoDetails)
+                .catch(error => {
+                    document.getElementById('video-details').innerHTML = `
+                        <div class="error-message">
+                            <p>Error loading video: ${error.message}</p>
+                            <a href="index.html" class="back-link">← Back to all videos</a>
+                        </div>
+                    `;
+                });
+        } else {
+            document.getElementById('video-details').innerHTML = `
+                <div class="error-message">
+                    <p>No video specified</p>
+                    <a href="index.html" class="back-link">← Back to all videos</a>
+                </div>
+            `;
+        }
+    </script>
+</body>
+</html>
