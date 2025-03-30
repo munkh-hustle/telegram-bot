@@ -33,7 +33,6 @@
                     id: videoId,
                     title: video.title || `Video ${videoId}`,
                     description: video.description || "No description available",
-                    views: video.views || 0,
                     file_id: video.file_id || ""
                 };
             } catch (error) {
@@ -48,9 +47,6 @@
             container.innerHTML = `
                 <div class="video-container">
                     <h1 class="video-title">${video.title}</h1>
-                    <div class="video-meta">
-                        <span>👁️ ${video.views} views</span>
-                    </div>
                     <div class="video-thumbnail" style="background-image: url('${video.thumbnail || ''}')"></div>
                     <div class="video-description">
                         ${video.description}
