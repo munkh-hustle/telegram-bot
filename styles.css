@@ -7,13 +7,34 @@ body {
     background-color: #f8f9fa;
     color: #333;
 }
+/* Rainbow text effect */
+h1 {
+    background: linear-gradient(
+        to right,
+        #ff0018 0%, 
+        #ffa52c 15%,
+        #ffff41 30%,
+        #008018 45%,
+        #0000f9 60%,
+        #86007d 75%
+    );
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    display: inline-block;
+    padding: 0 10px;
+}
+/* Optional animation */
+@keyframes rainbow {
+    0% { background-position: 0% 50%; }
+    100% { background-position: 100% 50%; }
+}
 
 h1 {
-    color: #0088cc;
-    text-align: center;
-    margin-bottom: 30px;
-    font-weight: 600;
+    background-size: 600% 100%;
+    animation: rainbow 4s linear infinite;
 }
+
 
 .search-container {
     margin: 20px 0;
