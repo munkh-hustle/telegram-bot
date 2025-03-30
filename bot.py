@@ -943,11 +943,21 @@ async def button(update: Update, context: CallbackContext) -> None:
                     # Store user_id in context to use in the next message
                     context.user_data['awaiting_limit'] = user_id
 
-                    # Ask admin for the new limit
-                    await query.edit_message_text(
-                        text=f"✅ Payment from user ID {user_id} approved.\n"
-                             "Please send the new video limit for this user (e.g., '10')."
-                    )
+                    try:
+                        # Try to edit the original message
+                        await query.edit_message_text(
+                            text=f"✅ Payment from user ID {user_id} approved.\n"
+                                 "Please send the new video limit for this user (e.g., '10')."
+                        )
+                    except Exception as edit_error:
+                        # If editing fails, send a new message
+                        logger.error(f"Error editing approval message: {edit_error}")
+                        await context.bot.send_message(
+                            chat_id=ADMIN_ID,
+                            text=f"✅ Payment from user ID {user_id} approved.\n"
+                                 "Please send the new video limit for this user (e.g., '10')."
+                        )
+
 
                     # Notify user
                     await context.bot.send_message(
@@ -957,9 +967,15 @@ async def button(update: Update, context: CallbackContext) -> None:
 
                 except Exception as e:
                     logger.error(f"Error approving payment: {e}")
-                    await query.edit_message_text(
-                        text=f"❌ Error approving payment: {str(e)}"
-                    )
+                    try:
+                        await query.edit_message_text(
+                            text=f"❌ Error approving payment: {str(e)}"
+                        )
+                    except:
+                        await context.bot.send_message(
+                            chat_id=ADMIN_ID,
+                            text=f"❌ Error approving payment: {str(e)}"
+                        )
 
 
         elif query.data.startswith('reject_'):
