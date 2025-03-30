@@ -278,7 +278,7 @@ def save_payment_submission(payment_data):
 async def user_limits(update: Update, context: CallbackContext) -> None:
     """View or set user limits (admin only)"""
     if not is_admin(update):
-        await update.message.reply_text("Permission denied.")
+        await update.message.reply_text("Зөвхөн админ болно.")
         return
     
     if len(context.args) >= 2:
@@ -289,10 +289,10 @@ async def user_limits(update: Update, context: CallbackContext) -> None:
             
             set_user_video_limit(user_id, new_limit)
             await update.message.reply_text(
-                f"✅ Limit for user {user_id} set to {new_limit} videos."
+                f"✅ {user_id} дугаартай хэрэглэгч таныг {new_limit} удаа өөр кино үзэхээр сунгалаа."
             )
         except ValueError:
-            await update.message.reply_text("Usage: /userlimit <user_id> <limit>")
+            await update.message.reply_text("Хэрэглээ: /userlimit <user_id> <limit>")
     else:
         # Viewing limits
         limits = load_user_limits()
@@ -309,7 +309,7 @@ async def user_limits(update: Update, context: CallbackContext) -> None:
 async def edit_description(update: Update, context: CallbackContext) -> None:
     """Edit video description (admin only)"""
     if not is_admin(update):
-        await update.message.reply_text("Permission denied.")
+        await update.message.reply_text("Зөвхөн админ.")
         return
     
     if len(context.args) < 2:
@@ -343,7 +343,7 @@ async def edit_description(update: Update, context: CallbackContext) -> None:
 async def edit_title(update: Update, context: CallbackContext) -> None:
     """Edit video title (admin only)"""
     if not is_admin(update):
-        await update.message.reply_text("Permission denied.")
+        await update.message.reply_text("Зөвхөн админ.")
         return
     
     if len(context.args) < 2:
@@ -377,7 +377,7 @@ async def edit_title(update: Update, context: CallbackContext) -> None:
 async def reload_data(update: Update, context: CallbackContext) -> None:
     """Reload video data from disk (admin only)"""
     if not is_admin(update):
-        await update.message.reply_text("Permission denied.")
+        await update.message.reply_text("Зөвхөн админ.")
         return
     
     try:
@@ -425,9 +425,9 @@ async def handle_screenshot(update: Update, context: CallbackContext) -> None:
 
         # Notify user
         await update.message.reply_text(
-            "✅ Payment screenshot received!\n"
-            "Admin will verify it shortly.\n\n"
-            f"Your User ID: {user.id}"
+            "Дэлгэцний зураг хүлээг авлаа!\n"
+            "Админ шалгах хүртэл түр хүлээнэ үү.\n\n"
+            f"Таны дугаар: {user.id}"
         )
                 
         # Forward to admin with approval buttons
@@ -458,7 +458,7 @@ async def handle_screenshot(update: Update, context: CallbackContext) -> None:
 async def reset_user(update: Update, context: CallbackContext) -> None:
     """Reset a user's video count (admin only)"""
     if not is_admin(update):
-        await update.message.reply_text("Permission denied.")
+        await update.message.reply_text("Зөвхөн админ.")
         return
     
     if not context.args:
@@ -483,7 +483,7 @@ async def send_video_with_limit_check(update: Update, context: CallbackContext, 
         if not user_data.get('unblocked'):
             await context.bot.send_message(
                 chat_id=update.effective_chat.id,
-                text="You've reached the 5 video limit. Please wait for admin approval."
+                text="Таны үзэх эрх дууссан байна. Хэрвээ төлбөр шилжүүлсэн бол админ мэдээлэл өгтөл түр хүлээнэ үү."
             )
             return False
     
@@ -508,20 +508,22 @@ async def send_video_with_limit_check(update: Update, context: CallbackContext, 
             chat_id=update.effective_chat.id,
             video=video_db[video_name],
             protect_content=True,
-            caption=f"Here's your requested video: {video_name}"
+            caption=f"Таны үзэхгийг хүссэн кино. Энэ байна."
         )
         log_sent_video(user.id, video_name)
 
         # Then block them and send payment instructions
         block_user(user.id, user.username, user.first_name)
         payment_message = (
-            f"⚠️ You've reached your limit of {user_limit} videos.\n\n"
-            "To continue accessing videos, please send 10,000 MNT to:\n"
-            "🏦 Khan Bank: 5926271236\n\n"
-            "Include this in the transaction description:\n"
-            f"UserID:{user.id} 10000\n\n"
-            "After payment, send a screenshot of the transaction here.\n"
-            "Admin will review it and approve your access."
+            f"⚠️ Яаана та {user_limit} удаа үзэх эрх дууссан байна.\n\n"
+            "Үргэлжлүүлэн үзэхийг хүсвэл хэдэн кино үзмээр байна:\n"
+            "Тэр тоогоороо төлбөр төлнө үү:\n"
+            "1 кино = 1000 төгрөг:\n"
+            "🏦 Хаан банк: 5926271236\n\n"
+            "Гүйлгээний утга өөрийнхөө утасны дугаар бичнэ:\n"
+            "Шилжүүлснийхээ дараа төлбөр төлсөн дэлгэцийн зургаа дарж ийшээ явуулна уу.\n"
+            "Админ шалгаж үзээд баталгаажуулах болно. 1 хоногийн дотор хийх болно"
+            f"Таны дугаар:{user.id}\n\n"
         )
         await context.bot.send_message(
             chat_id=update.effective_chat.id,
@@ -650,9 +652,9 @@ async def start(update: Update, context: CallbackContext) -> None:
                 return
             
     if video_name is not None:  # Only show this if we were actually looking for a video
-        await update.message.reply_text(f"Video '{video_name}' not found. Available videos: /list")
+        await update.message.reply_text(f"Уучлаарай '{video_name}' олдсонгүй. админтай холбогдоно уу.")
     else:
-        await update.message.reply_text(f'Hi {user.first_name}! Use /list to see available videos.')
+        await update.message.reply_text(f'Сайн байна уу? {user.first_name}!. www.kino.mn руу орж киногоо сонгоно уу.')
 
 async def blocked_users(update: Update, context: CallbackContext) -> None:
     """Show list of blocked users (admin only)"""
