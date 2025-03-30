@@ -43,11 +43,18 @@
 
         function displayVideoDetails(video) {
             const container = document.getElementById('video-details');
-            
+                
+            // YouTube thumbnail URL
+            const thumbnailUrl = video.youtube_id ? 
+                `https://img.youtube.com/vi/${video.youtube_id}/maxresdefault.jpg` : 
+                '';
+                
             container.innerHTML = `
                 <div class="video-container">
                     <h1 class="video-title">${video.title}</h1>
-                    <div class="video-thumbnail" style="background-image: url('${video.thumbnail || ''}')"></div>
+                    ${thumbnailUrl ? `
+                        <div class="video-thumbnail" style="background-image: url('${thumbnailUrl}')"></div>
+                    ` : '<div class="video-thumbnail"><div class="no-thumbnail">No preview available</div></div>'}
                     <div class="video-description">
                         ${video.description}
                     </div>

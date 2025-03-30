@@ -48,9 +48,9 @@
                     id: id,
                     title: video.title || `Video ${id}`,
                     description: video.description || "No description available",
-                    file_id: video.file_id || ""
+                    file_id: video.file_id || "",
+                    thumbnail: video.thumbnail || "" // Keep this if you want to support both
                 }));
-                
             } catch (error) {
                 console.error("Error loading video data:", error);
                 showError("Failed to load video data. Please refresh the page.");
@@ -93,11 +93,17 @@
                     console.warn(`Video ${video.id} has no file_id, skipping`);
                     return;
                 }
+
+                // YouTube thumbnail URL (default to maxres if available, fallback to hqdefault)
+                const thumbnailUrl = video.youtube_id ? 
+                    `https://img.youtube.com/vi/${video.youtube_id}/maxresdefault.jpg` : 
+                    '';
                 
                 const videoCard = document.createElement('div');
                 videoCard.className = 'video-card';
                 videoCard.innerHTML = `
-                    <div class="video-thumbnail" style="background-image: url('${video.thumbnail || ''}')">
+                    <div class="video-thumbnail" style="background-image: url('${thumbnailUrl}')">
+                        ${!thumbnailUrl ? '<div class="no-thumbnail">No preview</div>' : ''}
                     </div>
                     <div class="video-info">
                         <div class="video-title">${video.title}</div>

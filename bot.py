@@ -248,7 +248,139 @@ def save_payment_submission(payment_data):
     
     with open('payment_submissions.json', 'w', encoding='utf-8') as f:
         json.dump(data, f, indent=2)
-  
+async def add_youtube_id(update: Update, context: CallbackContext) -> None:
+    """Add YouTube ID to video (admin only)"""
+    if not is_admin(update):
+        await update.message.reply_text("Permission denied.")
+        return
+    
+    if len(context.args) < 2:
+        await update.message.reply_text("Usage: /addyoutube <video_name> <youtube_id>")
+        return
+    
+    video_name = ' '.join(context.args[:-1])
+    youtube_id = context.args[-1]
+    
+    try:
+        video_data = load_video_data()
+        if video_name in video_data:
+            video_data[video_name]["youtube_id"] = youtube_id
+            with open('video_data.json', 'w') as f:
+                json.dump(video_data, f, indent=2)
+            await update.message.reply_text(f"✅ YouTube ID added for '{video_name}'")
+        else:
+            await update.message.reply_text(f"❌ Video '{video_name}' not found")
+    except Exception as e:
+        logger.error(f"Error adding YouTube ID: {e}")
+        await update.message.reply_text("❌ Error adding YouTube ID")
+
+async def remove_youtube_id(update: Update, context: CallbackContext) -> None:
+    """Remove YouTube ID from video (admin only)"""
+    if not is_admin(update):
+        await update.message.reply_text("Permission denied.")
+        return
+    
+    if not context.args:
+        await update.message.reply_text("Usage: /removeyoutube <video_name>")
+        return
+    
+    video_name = ' '.join(context.args)
+    
+    try:
+        video_data = load_video_data()
+        if video_name in video_data and "youtube_id" in video_data[video_name]:
+            del video_data[video_name]["youtube_id"]
+            with open('video_data.json', 'w') as f:
+                json.dump(video_data, f, indent=2)
+            await update.message.reply_text(f"✅ YouTube ID removed from '{video_name}'")
+        else:
+            await update.message.reply_text(f"❌ Video '{video_name}' has no YouTube ID or doesn't exist")
+    except Exception as e:
+        logger.error(f"Error removing YouTube ID: {e}")
+        await update.message.reply_text("❌ Error removing YouTube ID")
+
+async def edit_description(update: Update, context: CallbackContext) -> None:
+    """Edit video description (admin only)"""
+    if not is_admin(update):
+        await update.message.reply_text("Permission denied.")
+        return
+    
+    if len(context.args) < 2:
+        await update.message.reply_text("Usage: /editdescription <video_name> <new_description>")
+        return
+    
+    video_name = ' '.join(context.args[:-1])
+    new_description = context.args[-1]
+    
+    try:
+        # Load current video data
+        with open('video_data.json', 'r', encoding='utf-8') as f:
+            video_data = json.load(f)
+        
+        if video_name in video_data:
+            # Update description
+            video_data[video_name]['description'] = new_description
+            
+            # Save back to file
+            with open('video_data.json', 'w', encoding='utf-8') as f:
+                json.dump(video_data, f, indent=2)
+            
+            await update.message.reply_text(f"✅ Description updated for '{video_name}'")
+        else:
+            await update.message.reply_text(f"❌ Video '{video_name}' not found.")
+            
+    except Exception as e:
+        logger.error(f"Error editing description: {e}")
+        await update.message.reply_text("❌ Error updating description. Check logs for details.")
+
+async def edit_title(update: Update, context: CallbackContext) -> None:
+    """Edit video title (admin only)"""
+    if not is_admin(update):
+        await update.message.reply_text("Permission denied.")
+        return
+    
+    if len(context.args) < 2:
+        await update.message.reply_text("Usage: /edittitle <video_name> <new_title>")
+        return
+    
+    video_name = ' '.join(context.args[:-1])
+    new_title = context.args[-1]
+    
+    try:
+        # Load current video data
+        with open('video_data.json', 'r', encoding='utf-8') as f:
+            video_data = json.load(f)
+        
+        if video_name in video_data:
+            # Update title
+            video_data[video_name]['title'] = new_title
+            
+            # Save back to file
+            with open('video_data.json', 'w', encoding='utf-8') as f:
+                json.dump(video_data, f, indent=2)
+            
+            await update.message.reply_text(f"✅ Title updated for '{video_name}'")
+        else:
+            await update.message.reply_text(f"❌ Video '{video_name}' not found.")
+            
+    except Exception as e:
+        logger.error(f"Error editing title: {e}")
+        await update.message.reply_text("❌ Error updating title. Check logs for details.")
+
+async def reload_data(update: Update, context: CallbackContext) -> None:
+    """Reload video data from disk (admin only)"""
+    if not is_admin(update):
+        await update.message.reply_text("Permission denied.")
+        return
+    
+    try:
+        load_video_db()
+        sync_video_data()
+        await update.message.reply_text("Video data reloaded successfully!")
+    except Exception as e:
+        logger.error(f"Error reloading data: {e}")
+        await update.message.reply_text("Error reloading data.")
+
 async def notify_admin_payment_submission(context: CallbackContext, user, file_path):
     """Notify admin about new payment submission"""
     keyboard = [
@@ -1030,6 +1162,11 @@ def main() -> None:
     application.add_handler(CommandHandler("resetuser", reset_user))
     application.add_handler(CommandHandler("videologs", video_logs))
     application.add_handler(CommandHandler("verifypayment", verify_payment))
+    application.add_handler(CommandHandler("reload", reload_data))
+    application.add_handler(CommandHandler("editdescription", edit_description))
+    application.add_handler(CommandHandler("edittitle", edit_title))
+    application.add_handler(CommandHandler("addyoutube", add_youtube_id))
+    application.add_handler(CommandHandler("removeyoutube", remove_youtube_id))
 
     
     # Handle button presses
