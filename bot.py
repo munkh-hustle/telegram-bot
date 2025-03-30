@@ -981,29 +981,39 @@ async def button(update: Update, context: CallbackContext) -> None:
         elif query.data.startswith('reject_'):
             user_id = int(query.data[7:])
             if is_admin(update):
-                # Update payment status
-                update_payment_status(user_id, 'rejected')
-
-                # Notify user
-                await context.bot.send_message(
-                    chat_id=user_id,
-                    text="❌ Your payment couldn't be verified. Please send a clear screenshot of your transaction."
-                )
-
                 try:
-                    # Try to edit the original message
-                    await query.edit_message_text(
-                        text=f"❌ Payment from user ID {user_id} rejected."
-                    )
-                except Exception as e:
-                    logger.error(f"Error editing rejection message: {e}")
-                    # Fallback - send a new message if editing fails
+                    # Update payment status
+                    update_payment_status(user_id, 'rejected')
+
+                    # Notify user
                     await context.bot.send_message(
-                        chat_id=ADMIN_ID,
-                        text=f"❌ Payment from user ID {user_id} rejected."
+                        chat_id=user_id,
+                        text="❌ Your payment couldn't be verified. Please send a clear screenshot of your transaction."
                     )
 
-
+                    try:
+                        # Try to edit the original message
+                        await query.edit_message_text(
+                            text=f"❌ Payment from user ID {user_id} rejected."
+                        )
+                    except Exception as edit_error:
+                        # If editing fails, send a new message
+                        logger.warning(f"Couldn't edit message, sending new one: {edit_error}")
+                        await context.bot.send_message(
+                            chat_id=ADMIN_ID,
+                            text=f"❌ Payment from user ID {user_id} rejected."
+                        )
+                except Exception as e:
+                    logger.error(f"Error rejecting payment: {e}")
+                    try:
+                        await query.edit_message_text(
+                            text=f"❌ Error rejecting payment: {str(e)}"
+                        )
+                    except:
+                        await context.bot.send_message(
+                            chat_id=ADMIN_ID,
+                            text=f"❌ Error rejecting payment: {str(e)}"
+                        )
     except Exception as e:
         logger.error(f"Error handling button press: {e}")
         try:
@@ -1011,7 +1021,8 @@ async def button(update: Update, context: CallbackContext) -> None:
                 await query.edit_message_text(
                     text="Sorry, an error occurred while processing your request."
                 )
-        except:
+        except Exception as edit_error:
+            logger.warning(f"Couldn't edit error message, sending new one: {edit_error}")
             if update.effective_user:
                 await context.bot.send_message(
                     chat_id=update.effective_user.id,
