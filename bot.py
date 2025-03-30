@@ -552,7 +552,6 @@ async def addvideo(update: Update, context: CallbackContext) -> None:
             video_data[video_name] = {
                 "title": video_name,
                 "description": "No description available",
-                "views": 0,
                 "file_id": video_file_id
             }
             with open('video_data.json', 'w') as f:
