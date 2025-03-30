@@ -109,5 +109,13 @@
     "timestamp": "2025-03-30T19:24:16.610434",
     "status": "rejected",
     "processed_at": "2025-03-30T19:24:21.989826"
+  },
+  {
+    "user_id": 7942816218,
+    "username": "muunu03",
+    "first_name": "Solongos",
+    "timestamp": "2025-03-30T22:53:22.251793",
+    "status": "approved",
+    "processed_at": "2025-03-30T22:54:39.157090"
   }
 ]
