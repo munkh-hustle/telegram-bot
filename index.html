@@ -101,15 +101,19 @@
                 // Create thumbnail container
                 const thumbnailContainer = document.createElement('div');
                 thumbnailContainer.className = 'video-thumbnail-container';
+                
+                // Create thumbnail image element
+                const img = document.createElement('img');
+                img.className = 'video-thumbnail';
+                img.alt = video.title;
 
-                if (video.youtube_id) {
-                    const img = document.createElement('img');
-                    img.className = 'video-thumbnail';
-                    img.alt = video.title;
+                // Set loading attribute for better performance
+                img.loading = 'lazy';
 
-                    // First try mqdefault (more reliable)
+                if (video.youtube_id && isValidYoutubeId(video.youtube_id)) {
+                    // First try maxresdefault
                     img.src = `https://img.youtube.com/vi/${video.youtube_id}/mqdefault.jpg`;
-
+                        
                     img.onerror = function() {
                         // Fallback to hqdefault if mqdefault fails
                         this.src = `https://img.youtube.com/vi/${video.youtube_id}/hqdefault.jpg`;
@@ -118,10 +122,14 @@
                             thumbnailContainer.innerHTML = '<div class="no-thumbnail">No preview</div>';
                         };
                     };
-
-                    thumbnailContainer.appendChild(img);
                 } else {
+                    // No YouTube ID or invalid one - show placeholder
                     thumbnailContainer.innerHTML = '<div class="no-thumbnail">No preview</div>';
+                }
+            
+                // Only append img if we didn't set innerHTML
+                if (thumbnailContainer.innerHTML === '') {
+                    thumbnailContainer.appendChild(img);
                 }
                 
                 // Create video info
@@ -143,6 +151,11 @@
                 videoCard.appendChild(videoInfo);
                 container.appendChild(videoCard);
             });
+        }
+
+        // Helper function to validate YouTube IDs
+        function isValidYoutubeId(id) {
+            return id && id.length === 11 && !id.includes(' ');
         }
 
         // Filter videos based on search
