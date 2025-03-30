@@ -59,16 +59,6 @@ header h1 a {
     margin-bottom: 20px;
 }
 
-/* ... rest of your existing video.css ... */
-
-.video-container {
-    background: white;
-    border-radius: 12px;
-    padding: 20px;
-    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-    margin-bottom: 20px;
-}
-
 .video-title {
     font-size: 24px;
     font-weight: 600;
