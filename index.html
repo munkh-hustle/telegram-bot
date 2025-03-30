@@ -13,22 +13,20 @@
     </div>
     
     <div id="video-container" class="video-grid">
-        <div class="loading">Бичлэг уншиж байна...</div>
+        <div class="loading">Loading videos...</div>
     </div>
     
     <div id="error-message" class="error-message"></div>
     
     <div class="instructions">
-        <h3>Кино үзэх заавар:</h3>
+        <h3>How to watch movies:</h3>
         <ol>
-            <li>Telegram аппыг app store эсвэл play store оос татаж аваад нэвтэр орох</li>
-            <li>Буцаж энэ сайт руу ороод, Киноны доорх ҮЗЭХ товчин дээр дарна</li>
-            <li>Автомат боттой холбогдож бичлэг тань руу явуулах болно</li>
-            <li>Кино таалагдсан бол ОЮУТАН миний дансанд хандив хийж туслаарай</li>
-            <li>Хаан банк</li>
-            <li>??????????</li>
+            <li>Download Telegram app from app store or play store and login</li>
+            <li>Return to this site and click on VIEW button below the movie</li>
+            <li>You'll automatically connect with our bot and receive the video</li>
+            <li>If you like the movie, please donate to support us</li>
+            <li>Khan Bank: 1234567890</li>
         </ol>
-        <p><strong>Note:</strong> You need to interact with the bot in Telegram first before videos can be sent.</p>
     </div>
 
     <script>
@@ -49,28 +47,10 @@
                     title: video.title || `Video ${id}`,
                     description: video.description || "No description available",
                     file_id: video.file_id || "",
-                    thumbnail: video.thumbnail || "" // Keep this if you want to support both
+                    thumbnail: video.thumbnail || "" // This will be the local thumbnail filename
                 }));
             } catch (error) {
                 console.error("Error loading video data:", error);
-                showError("Failed to load video data. Please refresh the page.");
-                return {};
-            }
-        }
-
-        // Process video data into array format
-        async function prepareVideos() {
-            try {
-                const videoData = await loadVideoData();
-                return videoData.map(video => ({
-                    id: video.id,
-                    title: video.title || `Video ${video.id}`,
-                    description: video.description || "No description available",
-                    file_id: video.file_id || "",
-                    youtube_id: video.youtube_id || ""
-                }));
-            } catch (error) {
-                console.error("Error preparing video data:", error);
                 showError("Failed to load video data. Please refresh the page.");
                 return [];
             }
@@ -98,31 +78,15 @@
                 const videoCard = document.createElement('div');
                 videoCard.className = 'video-card';
             
-                // Create thumbnail container - using same approach as video.html
+                // Create thumbnail container
                 const thumbnailContainer = document.createElement('div');
                 thumbnailContainer.className = 'video-thumbnail-container';
                 
-                // Set up thumbnail - using background-image like video.html
-                if (video.youtube_id) {
-                    // Try maxresdefault first
-                    const maxresUrl = `https://img.youtube.com/vi/${video.youtube_id}/maxresdefault.jpg`;
-                    const hqUrl = `https://img.youtube.com/vi/${video.youtube_id}/hqdefault.jpg`;
-                    
-                    // Create test image to check if maxres exists
-                    const testImg = new Image();
-                    testImg.onload = function() {
-                        // If maxres loads successfully, use it
-                        thumbnailContainer.style.backgroundImage = `url('${maxresUrl}')`;
-                        thumbnailContainer.style.backgroundSize = 'cover';
-                    };
-                    testImg.onerror = function() {
-                        // Fall back to hqdefault if maxres fails
-                        thumbnailContainer.style.backgroundImage = `url('${hqUrl}')`;
-                        thumbnailContainer.style.backgroundSize = 'cover';
-                    };
-                    testImg.src = maxresUrl;
+                // Set up thumbnail - using local image
+                if (video.thumbnail) {
+                    thumbnailContainer.style.backgroundImage = `url('thumbnails/${video.thumbnail}')`;
+                    thumbnailContainer.style.backgroundSize = 'cover';
                 } else {
-                    // No YouTube ID - show placeholder
                     thumbnailContainer.innerHTML = '<div class="no-thumbnail">No preview</div>';
                 }
             
@@ -145,11 +109,6 @@
                 videoCard.appendChild(videoInfo);
                 container.appendChild(videoCard);
             });
-        }
-
-        // Helper function to validate YouTube IDs
-        function isValidYoutubeId(id) {
-            return id && id.length === 11 && !id.includes(' ');
         }
 
         // Filter videos based on search
@@ -175,7 +134,7 @@
 
         // Initialize the page
         document.addEventListener('DOMContentLoaded', async () => {
-            videos = await prepareVideos();
+            videos = await loadVideoData();
             if (videos.length > 0) {
                 displayVideos(videos);
             }

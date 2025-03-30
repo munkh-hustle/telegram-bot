@@ -43,43 +43,30 @@
         }
 
         function displayVideoDetails(video) {
-            const container = document.getElementById('video-details');
+        const container = document.getElementById('video-details');
                 
-            // YouTube thumbnail URL - use maxresdefault first, fallback to hqdefault
-            const thumbnailUrl = video.youtube_id ? 
-                `https://img.youtube.com/vi/${video.youtube_id}/maxresdefault.jpg` : 
-                '';
+        // Local thumbnail URL
+        const thumbnailUrl = video.thumbnail ? `thumbnails/${video.thumbnail}` : '';
                 
-            container.innerHTML = `
-                <div class="video-container">
-                    <h1 class="video-title">${video.title}</h1>
-                    <div class="video-thumbnail" ${thumbnailUrl ? `style="background-image: url('${thumbnailUrl}')"` : ''}>
-                        ${!thumbnailUrl ? '<div class="no-thumbnail">No preview available</div>' : ''}
-                    </div>
-                    <div class="video-description">
-                        ${video.description}
-                    </div>
-                    <a href="https://t.me/${BOT_USERNAME}?start=video_${video.id}" 
-                       class="telegram-button"
-                       target="_blank"
-                       rel="noopener noreferrer">
-                       Get This Video on Telegram
-                    </a>
+        container.innerHTML = `
+            <div class="video-container">
+                <h1 class="video-title">${video.title}</h1>
+                <div class="video-thumbnail" ${thumbnailUrl ? `style="background-image: url('${thumbnailUrl}')"` : ''}>
+                    ${!thumbnailUrl ? '<div class="no-thumbnail">No preview available</div>' : ''}
                 </div>
-                <a href="index.html" class="back-link">← Back to all videos</a>
-            `;
-            
-            // Add fallback if maxresdefault doesn't exist
-            if (thumbnailUrl) {
-                const img = new Image();
-                img.onerror = function() {
-                    // If maxresdefault fails, try hqdefault
-                    document.querySelector('.video-thumbnail').style.backgroundImage = 
-                        `url('https://img.youtube.com/vi/${video.youtube_id}/hqdefault.jpg')`;
-                };
-                img.src = thumbnailUrl;
-            }
-        }
+                <div class="video-description">
+                    ${video.description}
+                </div>
+                <a href="https://t.me/${BOT_USERNAME}?start=video_${video.id}" 
+                   class="telegram-button"
+                   target="_blank"
+                   rel="noopener noreferrer">
+                   Get This Video on Telegram
+                </a>
+            </div>
+            <a href="index.html" class="back-link">← Back to all videos</a>
+        `;
+    }
 
         // Get video ID from URL
         const urlParams = new URLSearchParams(window.location.search);
