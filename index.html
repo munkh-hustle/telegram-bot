@@ -80,15 +80,15 @@
         function displayVideos(videoList) {
             const container = document.getElementById('video-container');
             const errorDiv = document.getElementById('error-message');
-
+                
             if (!videoList || videoList.length === 0) {
                 container.innerHTML = '<div class="loading">No videos found</div>';
                 return;
             }
-
+        
             container.innerHTML = '';
             errorDiv.style.display = 'none';
-
+        
             videoList.forEach(video => {
                 if (!video.file_id) {
                     console.warn(`Video ${video.id} has no file_id, skipping`);
@@ -97,41 +97,35 @@
             
                 const videoCard = document.createElement('div');
                 videoCard.className = 'video-card';
-
-                // Create thumbnail container
+            
+                // Create thumbnail container - using same approach as video.html
                 const thumbnailContainer = document.createElement('div');
                 thumbnailContainer.className = 'video-thumbnail-container';
                 
-                // Create thumbnail image element
-                const img = document.createElement('img');
-                img.className = 'video-thumbnail';
-                img.alt = video.title;
-
-                // Set loading attribute for better performance
-                img.loading = 'lazy';
-
-                if (video.youtube_id && isValidYoutubeId(video.youtube_id)) {
-                    // First try maxresdefault
-                    img.src = `https://img.youtube.com/vi/${video.youtube_id}/mqdefault.jpg`;
-                        
-                    img.onerror = function() {
-                        // Fallback to hqdefault if mqdefault fails
-                        this.src = `https://img.youtube.com/vi/${video.youtube_id}/hqdefault.jpg`;
-                        this.onerror = function() {
-                            // Final fallback if both fail
-                            thumbnailContainer.innerHTML = '<div class="no-thumbnail">No preview</div>';
-                        };
+                // Set up thumbnail - using background-image like video.html
+                if (video.youtube_id) {
+                    // Try maxresdefault first
+                    const maxresUrl = `https://img.youtube.com/vi/${video.youtube_id}/maxresdefault.jpg`;
+                    const hqUrl = `https://img.youtube.com/vi/${video.youtube_id}/hqdefault.jpg`;
+                    
+                    // Create test image to check if maxres exists
+                    const testImg = new Image();
+                    testImg.onload = function() {
+                        // If maxres loads successfully, use it
+                        thumbnailContainer.style.backgroundImage = `url('${maxresUrl}')`;
+                        thumbnailContainer.style.backgroundSize = 'cover';
                     };
+                    testImg.onerror = function() {
+                        // Fall back to hqdefault if maxres fails
+                        thumbnailContainer.style.backgroundImage = `url('${hqUrl}')`;
+                        thumbnailContainer.style.backgroundSize = 'cover';
+                    };
+                    testImg.src = maxresUrl;
                 } else {
-                    // No YouTube ID or invalid one - show placeholder
+                    // No YouTube ID - show placeholder
                     thumbnailContainer.innerHTML = '<div class="no-thumbnail">No preview</div>';
                 }
             
-                // Only append img if we didn't set innerHTML
-                if (thumbnailContainer.innerHTML === '') {
-                    thumbnailContainer.appendChild(img);
-                }
-                
                 // Create video info
                 const videoInfo = document.createElement('div');
                 videoInfo.className = 'video-info';
