@@ -249,39 +249,6 @@ def save_payment_submission(payment_data):
     with open('payment_submissions.json', 'w', encoding='utf-8') as f:
         json.dump(data, f, indent=2)
 
-async def add_thumbnail(update: Update, context: CallbackContext) -> None:
-    """Add thumbnail to video (admin only)"""
-    if not is_admin(update):
-        await update.message.reply_text("Permission denied.")
-        return
-    
-    if not context.args or not update.message.reply_to_message or not update.message.reply_to_message.photo:
-        await update.message.reply_text("Usage: /addthumbnail <video_name> (reply to a photo)")
-        return
-    
-    video_name = ' '.join(context.args)
-    photo = update.message.reply_to_message.photo[-1]  # Get highest resolution photo
-    
-    try:
-        # Download the photo
-        photo_file = await context.bot.get_file(photo.file_id)
-        filename = f"{video_name}.jpg"
-        os.makedirs('thumbnails', exist_ok=True)
-        await photo_file.download_to_drive(f"thumbnails/{filename}")
-        
-        # Update video_data.json
-        video_data = load_video_data()
-        if video_name in video_data:
-            video_data[video_name]["thumbnail"] = filename
-            with open('video_data.json', 'w') as f:
-                json.dump(video_data, f, indent=2)
-            await update.message.reply_text(f"✅ Thumbnail added for '{video_name}'")
-        else:
-            await update.message.reply_text(f"❌ Video '{video_name}' not found")
-    except Exception as e:
-        logger.error(f"Error adding thumbnail: {e}")
-        await update.message.reply_text("❌ Error adding thumbnail")
-
 async def edit_description(update: Update, context: CallbackContext) -> None:
     """Edit video description (admin only)"""
     if not is_admin(update):
@@ -1148,7 +1115,6 @@ def main() -> None:
     application.add_handler(CommandHandler("reload", reload_data))
     application.add_handler(CommandHandler("editdescription", edit_description))
     application.add_handler(CommandHandler("edittitle", edit_title))
-    application.add_handler(CommandHandler("addthumbnail", add_thumbnail))
 
     
     # Handle button presses

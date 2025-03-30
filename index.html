@@ -46,8 +46,8 @@
                     id: id,
                     title: video.title || `Video ${id}`,
                     description: video.description || "No description available",
-                    file_id: video.file_id || "",
-                    thumbnail: video.thumbnail || "" // This will be the local thumbnail filename
+                    file_id: video.file_id || ""
+                    // Removed thumbnail field
                 }));
             } catch (error) {
                 console.error("Error loading video data:", error);
@@ -60,15 +60,15 @@
         function displayVideos(videoList) {
             const container = document.getElementById('video-container');
             const errorDiv = document.getElementById('error-message');
-                
+
             if (!videoList || videoList.length === 0) {
                 container.innerHTML = '<div class="loading">No videos found</div>';
                 return;
             }
-        
+
             container.innerHTML = '';
             errorDiv.style.display = 'none';
-        
+
             videoList.forEach(video => {
                 if (!video.file_id) {
                     console.warn(`Video ${video.id} has no file_id, skipping`);
@@ -77,18 +77,6 @@
             
                 const videoCard = document.createElement('div');
                 videoCard.className = 'video-card';
-            
-                // Create thumbnail container
-                const thumbnailContainer = document.createElement('div');
-                thumbnailContainer.className = 'video-thumbnail-container';
-                
-                // Set up thumbnail - using local image
-                if (video.thumbnail) {
-                    thumbnailContainer.style.backgroundImage = `url('thumbnails/${video.thumbnail}')`;
-                    thumbnailContainer.style.backgroundSize = 'cover';
-                } else {
-                    thumbnailContainer.innerHTML = '<div class="no-thumbnail">No preview</div>';
-                }
             
                 // Create video info
                 const videoInfo = document.createElement('div');
@@ -105,7 +93,6 @@
                 `;
                 
                 // Assemble the card
-                videoCard.appendChild(thumbnailContainer);
                 videoCard.appendChild(videoInfo);
                 container.appendChild(videoCard);
             });
