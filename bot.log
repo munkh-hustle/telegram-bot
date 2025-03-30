@@ -1004,3 +1004,5 @@ Traceback (most recent call last):
   File "/data/data/com.termux/files/usr/lib/python3.12/site-packages/telegram/request/_httpxrequest.py", line 301, in do_request
     raise NetworkError(f"httpx.{err.__class__.__name__}: {err}") from err
 telegram.error.NetworkError: httpx.ConnectError: [Errno 7] No address associated with hostname
+2025-03-30 19:26:14,599 - httpx - INFO - HTTP Request: POST https://api.telegram.org/bot7641317425:AAHfWDG6uHQZeG8BQ5JvuvjMFvLFgrqbh9Q/getUpdates "HTTP/1.1 200 OK"
+2025-03-30 19:26:24,945 - httpx - INFO - HTTP Request: POST https://api.telegram.org/bot7641317425:AAHfWDG6uHQZeG8BQ5JvuvjMFvLFgrqbh9Q/getUpdates "HTTP/1.1 200 OK"
