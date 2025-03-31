@@ -24,6 +24,12 @@ h1 {
     color: transparent;
     display: inline-block;
     padding: 0 10px;
+    background-size: 600% 100%;
+    animation: rainbow 4s linear infinite;
+}
+@keyframes rainbow {
+    0% { background-position: 0% 50%; }
+    100% { background-position: 100% 50%; }
 }
 
 .search-container {
@@ -67,6 +73,7 @@ h1 {
 .video-card:hover {
     transform: translateY(-5px);
     box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+    animation: rainbow 4s linear infinite;
 }
 
 .video-info {
@@ -93,7 +100,16 @@ h1 {
     display: block;
     text-align: center;
     padding: 10px;
-    background-color: #0088cc;
+    background: linear-gradient(
+        to right,
+        #ff0018 0%, 
+        #ffa52c 15%,
+        #ffff41 30%,
+        #008018 45%,
+        #0000f9 60%,
+        #86007d 75%
+    );
+    animation: rainbow 4s linear infinite;
     color: white;
     text-decoration: none;
     border-radius: 6px;
